@@ -1,0 +1,2052 @@
+{
+"source": "lienquanmobile.gg",
+"updated": "13/11/2026",
+"heroes": {
+"Biron": {
+"countered_by": [
+"Florentino",
+"Hayate",
+"Thane",
+"Arthur",
+"Marja"
+],
+"allies": [
+"Veera",
+"Hayate",
+"Sephera",
+"Krixi",
+"Aleister"
+]
+},
+"Thane": {
+"countered_by": [
+"Alice",
+"Baldum",
+"Toro",
+"Gildur",
+"Charlotte"
+],
+"allies": [
+"Hayate",
+"Tel’Annas",
+"Valhein",
+"Laville",
+"Capheny"
+]
+},
+"Mina": {
+"countered_by": [
+"Alice",
+"Baldum",
+"Thane",
+"Toro",
+"Gildur"
+],
+"allies": [
+"Stuart",
+"Violet",
+"Yorn",
+"Slimz",
+"Wisp"
+]
+},
+"Butterfly": {
+"countered_by": [
+"Arum",
+"Zephys",
+"Richter",
+"Raz",
+"Baldum"
+],
+"allies": [
+"Xeniel",
+"Alice",
+"Thane",
+"TeeMee",
+"Chaugnar"
+]
+},
+"Toro": {
+"countered_by": [
+"Alice",
+"Baldum",
+"Thane",
+"Chaugnar",
+"Gildur"
+],
+"allies": [
+"Laville",
+"Violet",
+"Valhein",
+"Capheny",
+"Slimz"
+]
+},
+"Nakroth": {
+"countered_by": [
+"Arum",
+"Zephys",
+"Baldum",
+"Kriknak",
+"Murad"
+],
+"allies": [
+"Xeniel",
+"Alice",
+"Thane",
+"TeeMee",
+"Chaugnar"
+]
+},
+"Maloch": {
+"countered_by": [
+"Zephys",
+"Omen",
+"Amily",
+"Yena",
+"Xeniel"
+],
+"allies": [
+"Alice",
+"TeeMee",
+"Zip",
+"Baldum",
+"Helen"
+]
+},
+"Ignis": {
+"countered_by": [
+"Zuka",
+"Quillen",
+"Nakroth",
+"Kriknak",
+"Murad"
+],
+"allies": [
+"Arum",
+"Gildur",
+"Mina",
+"Sephera",
+"Omen"
+]
+},
+"Astrid": {
+"countered_by": [
+"Gildur",
+"Lauriel",
+"Lữ Bố",
+"Maloch",
+"Omen"
+],
+"allies": [
+"Alice",
+"Tel’Annas",
+"Zip",
+"Baldum",
+"Valhein"
+]
+},
+"Wonder Woman": {
+"countered_by": [
+"Maloch",
+"Hayate",
+"Zephys",
+"Lữ Bố",
+"Xeniel"
+],
+"allies": [
+"Alice",
+"Roxie",
+"TeeMee",
+"Zip",
+"Baldum"
+]
+},
+"TeeMee": {
+"countered_by": [
+"Alice",
+"Baldum",
+"Thane",
+"Hayate",
+"Eland’orr"
+],
+"allies": [
+"Hayate",
+"Valhein",
+"Capheny",
+"Tel’Annas",
+"Laville"
+]
+},
+"Tulen": {
+"countered_by": [
+"Kriknak",
+"Murad",
+"Hayate",
+"Eland’orr",
+"Raz"
+],
+"allies": [
+"Alice",
+"TeeMee",
+"Zip",
+"Baldum",
+"Toro"
+]
+},
+"Liliana": {
+"countered_by": [
+"Murad",
+"Kriknak",
+"Nakroth",
+"Zuka",
+"Alice"
+],
+"allies": [
+"Toro",
+"Baldum",
+"Omen",
+"Maloch",
+"Violet"
+]
+},
+"Richter": {
+"countered_by": [
+"Zephys",
+"Lữ Bố",
+"Maloch",
+"Xeniel",
+"Omen"
+],
+"allies": [
+"Alice",
+"TeeMee",
+"Aleister",
+"Zip",
+"Annette"
+]
+},
+"Sephera": {
+"countered_by": [
+"Maloch",
+"Omen",
+"Zephys",
+"Xeniel",
+"Lữ Bố"
+],
+"allies": [
+"Roxie",
+"Zip",
+"Alice",
+"Aleister",
+"Baldum"
+]
+},
+"Florentino": {
+"countered_by": [
+"Marja",
+"Valhein",
+"Lauriel",
+"Aleister",
+"Gildur"
+],
+"allies": [
+"Rouie",
+"Chaugnar",
+"Alice",
+"TeeMee",
+"Baldum"
+]
+},
+"Hayate": {
+"countered_by": [
+"Aleister",
+"Gildur",
+"TeeMee",
+"Ormarr",
+"Murad"
+],
+"allies": [
+"Alice",
+"Arum",
+"Maloch",
+"Xeniel",
+"Toro"
+]
+},
+"Capheny": {
+"countered_by": [
+"Zill",
+"Quillen",
+"Kriknak",
+"Nakroth",
+"Murad"
+],
+"allies": [
+"Maloch",
+"Xeniel",
+"Zata",
+"Errol",
+"Max"
+]
+},
+"Celica": {
+"countered_by": [
+"Murad",
+"Nakroth",
+"Kriknak",
+"Ngộ Không",
+"Quillen"
+],
+"allies": [
+"Maloch",
+"Xeniel",
+"Alice",
+"Zip",
+"Max"
+]
+},
+"Vol'kath": {
+"countered_by": [
+"Baldum",
+"Fennik",
+"Aleister",
+"Eland’orr",
+"Arum"
+],
+"allies": [
+"Alice",
+"TeeMee",
+"Baldum",
+"Helen",
+"Zip"
+]
+},
+"Eland'orr": {
+"countered_by": [
+"Murad",
+"Nakroth",
+"Kriknak",
+"Quillen",
+"Zill"
+],
+"allies": [
+"Maloch",
+"Xeniel",
+"Errol",
+"Max",
+"Zata"
+]
+},
+"Keera": {
+"countered_by": [
+"Kriknak",
+"Murad",
+"Nakroth",
+"Hayate",
+"Zill"
+],
+"allies": [
+"Xeniel",
+"Alice",
+"Thane",
+"TeeMee",
+"Chaugnar"
+]
+},
+"Paine": {
+"countered_by": [
+"Nakroth",
+"Zill",
+"Veera",
+"Aleister",
+"Krixi"
+],
+"allies": [
+"Chaugnar",
+"TeeMee",
+"Thane",
+"Alice",
+"Xeniel"
+]
+},
+"Zata": {
+"countered_by": [
+"Zephys",
+"Nakroth",
+"Zill",
+"Omen",
+"Yena"
+],
+"allies": [
+"Aya",
+"Ming",
+"Ormarr",
+"Helen",
+"Cresht"
+]
+},
+"Allain": {
+"countered_by": [
+"Hayate",
+"Eland’orr",
+"Fennik",
+"Capheny",
+"Laville"
+],
+"allies": [
+"Alice",
+"TeeMee",
+"Zip",
+"Baldum",
+"Richter"
+]
+},
+"Lorion": {
+"countered_by": [
+"Zill",
+"Nakroth",
+"Murad"
+],
+"allies": [
+"Alice",
+"Veera",
+"Aleister",
+"Toro",
+"Arum"
+]
+},
+"Bright": {
+"countered_by": [
+"Murad",
+"Nakroth",
+"Kriknak",
+"Quillen",
+"Zill"
+],
+"allies": [
+"Maloch",
+"Xeniel",
+"Errol",
+"Max",
+"Zata"
+]
+},
+"Iggy": {
+"countered_by": [
+"Zuka",
+"Ngộ Không",
+"Kriknak",
+"Zill",
+"Murad"
+],
+"allies": [
+"Annette",
+"Helen",
+"Rouie",
+"Alice",
+"Xeniel"
+]
+},
+"Aoi": {
+"countered_by": [
+"Arum",
+"Stuart",
+"Zephys",
+"Richter",
+"Raz"
+],
+"allies": [
+"Maloch",
+"Xeniel",
+"Errol",
+"Max",
+"Zata"
+]
+},
+"Aya": {
+"countered_by": [
+"Ngộ Không",
+"Zata",
+"Kriknak",
+"Nakroth",
+"Zill"
+],
+"allies": [
+"Tel’Annas",
+"Hayate",
+"Valhein",
+"Violet",
+"Yorn"
+]
+},
+"Teeri": {
+"countered_by": [
+"Kriknak",
+"Nakroth",
+"Murad",
+"Zill",
+"Zuka"
+],
+"allies": [
+"Alice",
+"Rouie",
+"Annette",
+"Helen",
+"Baldum"
+]
+},
+"Bonnie": {
+"countered_by": [
+"Kriknak",
+"Murad",
+"Nakroth"
+],
+"allies": [
+"Zip",
+"Alice",
+"TeeMee"
+]
+},
+"Ming": {
+"countered_by": [
+"Zill",
+"Murad",
+"Ngộ Không",
+"Nakroth",
+"Kriknak"
+],
+"allies": [
+"Hayate",
+"Valhein",
+"Tel’Annas",
+"Violet",
+"Celica"
+]
+},
+"Erin": {
+"countered_by": [
+"Ilumia",
+"Aoi",
+"Omen",
+"Qi",
+"Dextra"
+],
+"allies": [
+"Aya",
+"Y’bneth",
+"Thane",
+"Lauriel",
+"Allain"
+]
+},
+"Tachi": {
+"countered_by": [
+"Toro",
+"Hayate",
+"Omen",
+"Baldum"
+],
+"allies": [
+"Alice",
+"Nakroth",
+"Maloch",
+"Chaugnar"
+]
+},
+"Charlotte": {
+"countered_by": [
+"Veera",
+"Marja",
+"Lữ Bố",
+"Maloch",
+"Errol"
+],
+"allies": [
+"Krizzix",
+"Alice",
+"Baldum",
+"Zip",
+"TeeMee"
+]
+},
+"Dolia": {
+"countered_by": [
+"Paine",
+"Lindis",
+"Baldum"
+],
+"allies": [
+"Celica",
+"Elsu",
+"Stuart",
+"Fennik",
+"Hayate"
+]
+},
+"Bolt Baron": {
+"countered_by": [
+"Florentino",
+"Keera",
+"Liliana"
+],
+"allies": [
+"Thane",
+"Baldum",
+"Toro"
+]
+},
+"Billow": {
+"countered_by": [
+"Arthur",
+"Omen",
+"Thane"
+],
+"allies": [
+"Raz",
+"Krixi",
+"Tulen"
+]
+},
+"Dyadia": {
+"countered_by": [
+"Ngộ Không",
+"Nakroth",
+"Zill",
+"Zuka",
+"Murad"
+],
+"allies": [
+"Hayate",
+"Tel’Annas",
+"Valhein",
+"Capheny",
+"Laville"
+]
+},
+"Evita": {
+"countered_by": [
+"Zill",
+"Murad",
+"Nakroth",
+"Kriknak",
+"Paine"
+],
+"allies": [
+"Alice",
+"Baldum",
+"Helen",
+"Thane",
+"Chaugnar"
+]
+},
+"Airi": {
+"countered_by": [
+"Arum",
+"Zephys",
+"Kriknak",
+"Baldum",
+"Murad"
+],
+"allies": [
+"Alice",
+"Thane",
+"Chaugnar",
+"TeeMee",
+"Xeniel"
+]
+},
+"Lữ Bố": {
+"countered_by": [
+"Zephys",
+"Maloch",
+"Omen",
+"Amily",
+"Yena",
+"Hayate"
+],
+"allies": [
+"Alice",
+"TeeMee",
+"Zip",
+"Baldum",
+"Gildur",
+"Điêu Thuyền"
+]
+},
+"Krixi": {
+"countered_by": [
+"The Flash",
+"Keera",
+"Sinestrea",
+"Bright",
+"Kaine"
+],
+"allies": [
+"Gildur",
+"Grakk",
+"Annette",
+"Mina",
+"Krizzix"
+]
+},
+"Triệu Vân": {
+"countered_by": [
+"Hayate",
+"Eland’orr",
+"Fennik",
+"Arum",
+"Slimz"
+],
+"allies": [
+"Alice",
+"TeeMee",
+"Zip",
+"Baldum",
+"Annette"
+]
+},
+"Kahlii": {
+"countered_by": [
+"Zill",
+"Murad",
+"Nakroth",
+"Paine",
+"Dirak"
+],
+"allies": [
+"Mina",
+"Omega",
+"Lumburr",
+"Wiro",
+"Ata"
+]
+},
+"Zephys": {
+"countered_by": [
+"Hayate",
+"Eland’orr",
+"Aleister",
+"Baldum",
+"Arum"
+],
+"allies": [
+"Alice",
+"TeeMee",
+"Zip",
+"Baldum",
+"Dolia"
+]
+},
+"Điêu Thuyền": {
+"countered_by": [
+"Zill",
+"Murad",
+"Nakroth",
+"Paine",
+"Dirak"
+],
+"allies": [
+"Alice",
+"Maloch",
+"Toro",
+"Hayate",
+"Butterfly",
+"Lữ Bố"
+]
+},
+"Chaugnar": {
+"countered_by": [
+"Lauriel",
+"Raz",
+"Violet",
+"Hayate",
+"Tel’Annas"
+],
+"allies": [
+"Yorn",
+"Valhein",
+"Capheny",
+"Laville",
+"Hayate"
+]
+},
+"Violet": {
+"countered_by": [
+"Murad",
+"Ngộ Không",
+"Zuka",
+"Kriknak",
+"Quillen"
+],
+"allies": [
+"Y’bneth",
+"Sephera",
+"Ormarr",
+"Omega",
+"Lumburr"
+]
+},
+"Ormarr": {
+"countered_by": [
+"Zephys",
+"Omen",
+"Xeniel",
+"Arum",
+"Baldum"
+],
+"allies": [
+"Alice",
+"TeeMee",
+"Zip",
+"Baldum",
+"Helen"
+]
+},
+"Azzen'Ka": {
+"countered_by": [
+"Zill",
+"Murad",
+"Nakroth",
+"Paine",
+"Dirak"
+],
+"allies": [
+"Alice",
+"TeeMee",
+"Zip",
+"Baldum",
+"Helen"
+]
+},
+"Alice": {
+"countered_by": [
+"Ngộ Không",
+"Nakroth",
+"Zill",
+"Zuka",
+"Murad"
+],
+"allies": [
+"Hayate",
+"Tel’Annas",
+"Valhein",
+"Laville",
+"Capheny"
+]
+},
+"Gildur": {
+"countered_by": [
+"Alice",
+"Baldum",
+"Thane",
+"Toro",
+"Aleister"
+],
+"allies": [
+"Hayate",
+"Tel’Annas",
+"Valhein",
+"Laville",
+"Capheny"
+]
+},
+"Grakk": {
+"countered_by": [
+"Tulen",
+"Lauriel",
+"Nakroth",
+"Violet",
+"Hayate"
+],
+"allies": [
+"Hayate",
+"Capheny",
+"Tel’Annas",
+"Zuka",
+"biron"
+]
+},
+"Aleister": {
+"countered_by": [
+"Zill",
+"Murad",
+"Nakroth",
+"Paine",
+"Dirak",
+"Quillen",
+"Kriknak",
+"Ngộ Không"
+],
+"allies": [
+"Alice",
+"TeeMee",
+"Zip",
+"Baldum",
+"Helen",
+"Arum",
+"Toro",
+"Mina"
+]
+},
+"Fennik": {
+"countered_by": [
+"Keera",
+"Zill",
+"Violet",
+"Murad",
+"Quillen"
+],
+"allies": [
+"Aleister",
+"Gildur",
+"Alice",
+"Xeniel",
+"Toro"
+]
+},
+"Helen": {
+"countered_by": [
+"Keera",
+"Zill",
+"Raz",
+"Kriknak",
+"Gildur"
+],
+"allies": [
+"Kaine",
+"Kriknak",
+"Natalya",
+"Valhein",
+"Volkath"
+]
+},
+"Ngộ Không": {
+"countered_by": [
+"Arum",
+"Zephys",
+"Baldum",
+"Kriknak",
+"Murad"
+],
+"allies": [
+"Xeniel",
+"Alice",
+"Thane",
+"TeeMee",
+"Chaugnar"
+]
+},
+"Kriknak": {
+"countered_by": [
+"Arum",
+"Baldum",
+"Stuart",
+"Gildur",
+"Zill",
+"Aleister"
+],
+"allies": [
+"Xeniel",
+"Alice",
+"Thane",
+"TeeMee",
+"Chaugnar"
+]
+},
+"Arthur": {
+"countered_by": [
+"Lauriel",
+"Maloch",
+"Florentino",
+"Hayate",
+"Marja"
+],
+"allies": [
+"Alice",
+"Raz",
+"Natalya",
+"Capheny",
+"Zip"
+]
+},
+"Slimz": {
+"countered_by": [
+"Murad",
+"Nakroth",
+"Kriknak",
+"Quillen",
+"Zill"
+],
+"allies": [
+"Maloch",
+"Xeniel",
+"Errol",
+"Max",
+"Zata"
+]
+},
+"Ilumia": {
+"countered_by": [
+"Ngộ Không",
+"Kaine",
+"Paine",
+"Yan",
+"Volkath"
+],
+"allies": [
+"Ming",
+"Dolia",
+"Omega",
+"Ishar",
+"Aya"
+]
+},
+"Raz": {
+"countered_by": [
+"Nakroth",
+"Murad",
+"Kriknak",
+"Zuka",
+"Ngộ Không"
+],
+"allies": [
+"TeeMee",
+"Zephys",
+"Baldum",
+"Alice",
+"Zip"
+]
+},
+"Lauriel": {
+"countered_by": [
+"Gildur",
+"Aleister",
+"Nakroth",
+"Eland’orr",
+"Kriknak"
+],
+"allies": [
+"Helen",
+"Toro",
+"Ming",
+"Sephera",
+"TeeMee"
+]
+},
+"Kaine": {
+"countered_by": [
+"Lindis",
+"Hayate",
+"Florentino",
+"Fennik",
+"Elsu"
+],
+"allies": [
+"Xeniel",
+"Alice",
+"Rouie"
+]
+},
+"Murad": {
+"countered_by": [
+"Baldum",
+"Arum",
+"Alice",
+"Aleister",
+"Gildur"
+],
+"allies": [
+"TeeMee",
+"Chaugnar",
+"Xeniel",
+"Thane",
+"Alice"
+]
+},
+"Zill": {
+"countered_by": [
+"Murad",
+"Hayate",
+"Eland’orr",
+"Nakroth",
+"Kriknak"
+],
+"allies": [
+"Dirak",
+"Baldum",
+"Zip",
+"Alice",
+"Toro"
+]
+},
+"Arduin": {
+"countered_by": [
+"Zephys",
+"Lữ Bố",
+"Maloch",
+"Xeniel",
+"Omen"
+],
+"allies": [
+"Zip",
+"Alice",
+"TeeMee",
+"Helen",
+"Baldum"
+]
+},
+"Stuart": {
+"countered_by": [
+"Kaine",
+"Zill",
+"Nakroth",
+"Keera",
+"Aoi"
+],
+"allies": [
+"Aya",
+"Xeniel",
+"Helen",
+"Krizzix",
+"Alice"
+]
+},
+"Ryoma": {
+"allies": [
+"Roxie",
+"Zip",
+"Alice",
+"Aleister",
+"Baldum"
+],
+"countered_by": [
+"Maloch",
+"Omen",
+"Zephys",
+"Xeniel",
+"Lữ Bố"
+]
+},
+"Tel'Annas": {
+"countered_by": [
+"Nakroth",
+"Murad",
+"Quillen",
+"Kriknak",
+"Zill"
+],
+"allies": [
+"Max",
+"Xeniel",
+"Zata",
+"Maloch",
+"Errol"
+]
+},
+"Superman": {
+"countered_by": [
+"Hayate",
+"Aleister",
+"Stuart",
+"Tel’Annas",
+"Omen"
+],
+"allies": [
+"Aoi",
+"Baldum",
+"Bolt Baron",
+"Tulen",
+"Helen"
+]
+},
+"Xeniel": {
+"countered_by": [
+"Omen",
+"Allain",
+"Slimz"
+],
+"allies": [
+"Tel’Annas",
+"Laville",
+"Hayate"
+]
+},
+"Kil'Groth": {
+"countered_by": [
+"Maloch",
+"Omen",
+"Zephys",
+"Xeniel",
+"Lữ Bố"
+],
+"allies": [
+"TeeMee",
+"Alice",
+"Baldum",
+"Zip",
+"Tel’Annas"
+]
+},
+"Moren": {
+"countered_by": [
+"Quillen",
+"Zill",
+"Kriknak",
+"Murad",
+"Nakroth"
+],
+"allies": [
+"Xeniel",
+"Errol",
+"Zata",
+"Max",
+"Maloch"
+]
+},
+"Omen": {
+"countered_by": [
+"Maloch",
+"Florentino",
+"Tachi",
+"Marja",
+"Hayate"
+],
+"allies": [
+"Krixi",
+"Alice",
+"Aleister",
+"Veera",
+"Tel’Annas"
+]
+},
+"The Flash": {
+"countered_by": [
+"Aleister",
+"Arum",
+"Zill",
+"Baldum",
+"Veera"
+],
+"allies": [
+"Baldum",
+"TeeMee",
+"Alice",
+"Maloch",
+"Zip"
+]
+},
+"Rourke": {
+"countered_by": [
+"Fennik",
+"Zephys",
+"Lữ Bố",
+"Eland’orr",
+"Maloch"
+],
+"allies": [
+"Maloch",
+"TeeMee",
+"Alice",
+"Helen",
+"Aleister"
+]
+},
+"Roxie": {
+"countered_by": [
+"Omen",
+"Baldum",
+"Alice",
+"Arum",
+"Aleister"
+],
+"allies": [
+"Alice",
+"TeeMee",
+"Zip",
+"Baldum",
+"Rouie"
+]
+},
+"Baldum": {
+"countered_by": [
+"Alice",
+"Thane",
+"Gildur",
+"Toro",
+"Violet"
+],
+"allies": [
+"Capheny",
+"Laville",
+"Hayate",
+"Valhein",
+"Tel’Annas"
+]
+},
+"Amily": {
+"countered_by": [
+"Zephys",
+"Lữ Bố",
+"Maloch",
+"Xeniel",
+"Omen"
+],
+"allies": [
+"Alice",
+"Baldum",
+"Veera",
+"Aleister",
+"Helen"
+]
+},
+"Y'bneth": {
+"countered_by": [
+"Gildur",
+"Thane",
+"Toro",
+"Baldum",
+"Cresht"
+],
+"allies": [
+"Laville",
+"Valhein",
+"Capheny",
+"Tel’Annas",
+"Hayate"
+]
+},
+"Elsu": {
+"countered_by": [
+"Murad",
+"Nakroth",
+"Ngộ Không",
+"Quillen",
+"Zuka"
+],
+"allies": [
+"Baldum",
+"Thane",
+"Maloch",
+"Xeniel",
+"Aleister"
+]
+},
+"Quillen": {
+"countered_by": [
+"Zephys",
+"Kriknak",
+"Baldum",
+"Murad",
+"Arum"
+],
+"allies": [
+"Chaugnar",
+"TeeMee",
+"Alice",
+"Xeniel",
+"Thane"
+]
+},
+"Veres": {
+"countered_by": [
+"Zephys",
+"Maloch",
+"Kil’Groth",
+"Triệu Vân",
+"Allain"
+],
+"allies": [
+"Zip",
+"Alice",
+"Baldum",
+"TeeMee",
+"Tel’Annas"
+]
+},
+"D'Arcy": {
+"countered_by": [
+"Keera",
+"Hayate",
+"Murad",
+"Nakroth",
+"Zill"
+],
+"allies": [
+"Baldum",
+"Zip",
+"Aleister",
+"TeeMee",
+"Alice"
+]
+},
+"Yena": {
+"countered_by": [
+"Astrid",
+"Omen",
+"Zuka",
+"Richter",
+"Triệu Vân"
+],
+"allies": [
+"Alice",
+"Baldum",
+"Zip",
+"TeeMee",
+"Grakk"
+]
+},
+"Zip": {
+"countered_by": [
+"Alice",
+"Baldum",
+"Thane",
+"Hayate",
+"Eland’orr"
+],
+"allies": [
+"Hayate",
+"Tel’Annas",
+"Yorn",
+"Capheny",
+"Violet"
+]
+},
+"Krizzix": {
+"countered_by": [
+"Baldum",
+"Alice",
+"Thane",
+"Eland’orr",
+"Hayate"
+],
+"allies": [
+"Hayate",
+"Valhein",
+"Laville",
+"Tel’Annas",
+"Capheny"
+]
+},
+"Ishar": {
+"countered_by": [
+"D’Arcy",
+"Dirak",
+"Điêu Thuyền",
+"Natalya",
+"Zata"
+],
+"allies": [
+"Alice",
+"Toro",
+"TeeMee",
+"Zip",
+"Baldum"
+]
+},
+"Ata": {
+"countered_by": [
+"Keera",
+"Hayate",
+"Triệu Vân",
+"Natalya",
+"Kaine",
+"Butterfly"
+],
+"allies": [
+"Helen",
+"Alice",
+"TeeMee",
+"Zip",
+"Baldum"
+]
+},
+"Laville": {
+"countered_by": [
+"Ngộ Không",
+"Zuka",
+"Ryoma",
+"Quillen",
+"Enzo"
+],
+"allies": [
+"Lumburr",
+"Rouie",
+"Grakk",
+"Cresht",
+"Annette"
+]
+},
+"Sinestrea": {
+"countered_by": [
+"Nakroth",
+"Zill",
+"Ngộ Không",
+"Quillen",
+"Paine"
+],
+"allies": [
+"Xeniel",
+"Alice",
+"Thane",
+"TeeMee",
+"Chaugnar"
+]
+},
+"Dextra": {
+"countered_by": [
+"Hayate",
+"Eland’orr",
+"Fennik",
+"Capheny",
+"Laville"
+],
+"allies": [
+"Alice",
+"Sinestrea",
+"Tel’Annas",
+"Wisp",
+"TeeMee"
+]
+},
+"Yan": {
+"countered_by": [
+"Hayate",
+"Lauriel",
+"Florentino",
+"Tulen",
+"Aleister",
+"Arum"
+],
+"allies": [
+"Aleister",
+"Veera",
+"Alice",
+"Zip",
+"Baldum",
+"TeeMee"
+]
+},
+"Yue": {
+"countered_by": [
+"Nakroth",
+"Zata",
+"Ngộ Không",
+"Kriknak",
+"Zill"
+],
+"allies": [
+"Arthur",
+"Toro",
+"Roxie",
+"Maloch",
+"Baldum"
+]
+},
+"Bijan": {
+"countered_by": [
+"Omen",
+"Aoi",
+"Florentino",
+"Triệu Vân",
+"Veera"
+],
+"allies": [
+"Alice",
+"Xeniel",
+"Thane",
+"Điêu Thuyền",
+"Celica"
+]
+},
+"Qi": {
+"countered_by": [
+"Florentino",
+"Richter",
+"Stuart"
+],
+"allies": [
+"Alice",
+"TeeMee",
+"Zip",
+"Rouie",
+"Helen"
+]
+},
+"Dirak": {
+"countered_by": [
+"Zata",
+"Yorn",
+"Zill",
+"Kil’Groth",
+"Nakroth"
+],
+"allies": [
+"Maloch",
+"Lumburr",
+"Thane",
+"Grakk",
+"Toro"
+]
+},
+"Flowborn": {
+"countered_by": [
+"Murad",
+"Nakroth",
+"Kriknak",
+"Quillen",
+"Zill"
+],
+"allies": [
+"Maloch",
+"Xeniel",
+"Aya",
+"Grakk",
+"Zip"
+]
+},
+"Goverra": {
+"countered_by": [
+"Florentino",
+"Richter",
+"Kil’Groth",
+"Murad",
+"Kriknak"
+],
+"allies": [
+"Grakk",
+"Toro",
+"Zephys",
+"Maloch",
+"Baldum"
+]
+},
+"Edras": {
+"countered_by": [
+"Omen",
+"Lữ Bố",
+"Kriknak",
+"Nakroth"
+],
+"allies": [
+"Zip",
+"Alice",
+"Aleister",
+"Baldum"
+]
+},
+"Heino": {
+"countered_by": [
+"Nakroth",
+"Kriknak",
+"Murad",
+"Hayate",
+"Eland’orr"
+],
+"allies": [
+"Alice",
+"Baldum",
+"Aleister",
+"Helen"
+]
+},
+"Tamyn": {
+"countered_by": [
+"Veera",
+"Tachi",
+"Aleister",
+"Arum"
+],
+"allies": [
+"Grakk",
+"Toro",
+"Alice",
+"Aleister"
+]
+},
+"Valhein": {
+"countered_by": [
+"Murad",
+"Nakroth",
+"Kriknak",
+"Quillen",
+"Zill"
+],
+"allies": [
+"Maloch",
+"Xeniel",
+"Arum",
+"Max",
+"Cresht"
+]
+},
+"Veera": {
+"countered_by": [
+"Zephys",
+"Zill",
+"Murad",
+"Nakroth"
+],
+"allies": [
+"Alice",
+"Baldum",
+"TeeMee",
+"Zip",
+"biron"
+]
+},
+"Mganga": {
+"countered_by": [
+"Zephys",
+"Zill",
+"Ngộ Không",
+"Murad",
+"Zuka"
+],
+"allies": [
+"Alice",
+"Toro",
+"Gildur",
+"Baldum",
+"Annette"
+]
+},
+"Omega": {
+"countered_by": [
+"Thane",
+"Toro",
+"Baldum",
+"Alice",
+"Gildur"
+],
+"allies": [
+"Capheny",
+"Laville",
+"Valhein",
+"Tel’Annas",
+"Hayate"
+]
+},
+"Yorn": {
+"countered_by": [
+"Murad",
+"Keera",
+"Bright",
+"Ryoma",
+"Paine"
+],
+"allies": [
+"Mina",
+"Sephera",
+"Dolia",
+"Rouie",
+"Ishar"
+]
+},
+"Lumburr": {
+"countered_by": [
+"Alice",
+"Baldum",
+"Thane",
+"Toro",
+"Gildur"
+],
+"allies": [
+"Hayate",
+"Tel’Annas",
+"Valhein",
+"Laville",
+"Capheny"
+]
+},
+"Natalya": {
+"countered_by": [
+"Zill",
+"Murad",
+"Nakroth",
+"Paine",
+"Dirak"
+],
+"allies": [
+"Alice",
+"Gildur",
+"TeeMee",
+"Grakk",
+"Baldum"
+]
+},
+"Jinna": {
+"countered_by": [
+"Aleister",
+"Arum",
+"Hayate",
+"Elsu",
+"Build Moren Liên Quân"
+],
+"allies": [
+"Alice",
+"TeeMee",
+"Zip",
+"Baldum",
+"Helen"
+]
+},
+"Zuka": {
+"countered_by": [
+"Lữ Bố",
+"Zephys",
+"Xeniel",
+"Maloch",
+"Omen"
+],
+"allies": [
+"Alice",
+"TeeMee",
+"Zephys",
+"Zip",
+"Baldum"
+]
+},
+"Lindis": {
+"countered_by": [
+"Kriknak",
+"Quillen",
+"Murad",
+"Nakroth",
+"Zill"
+],
+"allies": [
+"Max",
+"Xeniel",
+"Zata",
+"Maloch",
+"Errol"
+]
+},
+"Wisp": {
+"countered_by": [
+"Quillen",
+"Keera",
+"Astrid",
+"Volkath",
+"Yan"
+],
+"allies": [
+"Aya",
+"Dolia",
+"Ming",
+"Grakk",
+"Ishar"
+]
+},
+"Marja": {
+"countered_by": [
+"Lữ Bố",
+"Maloch",
+"Richter",
+"Triệu Vân",
+"Rourke"
+],
+"allies": [
+"Baldum",
+"TeeMee",
+"Maloch",
+"Zip",
+"Alice"
+]
+},
+"Enzo": {
+"countered_by": [
+"Arum",
+"Kriknak",
+"Murad",
+"Nakroth",
+"Zuka"
+],
+"allies": [
+"Xeniel",
+"Alice",
+"Thane",
+"TeeMee",
+"Chaugnar"
+]
+},
+"Rouie": {
+"countered_by": [
+"Alice",
+"Baldum",
+"Thane",
+"Hayate",
+"Eland’orr"
+],
+"allies": [
+"Hayate",
+"Tel’Annas",
+"Valhein",
+"Laville",
+"Capheny"
+]
+},
+"Thorne": {
+"countered_by": [
+"Murad",
+"Nakroth",
+"Kriknak",
+"Quillen",
+"Zill"
+],
+"allies": [
+"Maloch",
+"Xeniel",
+"Errol",
+"Max",
+"Zata"
+]
+},
+"Cresht": {
+"countered_by": [
+"Alice",
+"Baldum",
+"Thane",
+"Toro",
+"Gildur"
+],
+"allies": [
+"Hayate",
+"Tel’Annas",
+"Valhein",
+"Laville",
+"Capheny"
+]
+},
+"Preyta": {
+"countered_by": [
+"Nakroth",
+"Kriknak",
+"Murad",
+"Hayate",
+"Eland’orr"
+],
+"allies": [
+"Alice",
+"Helen",
+"TeeMee",
+"Zip",
+"Baldum",
+"Grakk"
+]
+},
+"Skud": {
+"countered_by": [
+"Yena",
+"Amily",
+"Maloch",
+"Zephys",
+"Omen"
+],
+"allies": [
+"Zip",
+"TeeMee",
+"Điêu Thuyền",
+"Baldum",
+"Alice"
+]
+},
+"Max": {
+"countered_by": [
+"Maloch",
+"Zephys",
+"Xeniel",
+"Omen",
+"Lữ Bố"
+],
+"allies": [
+"Aoi",
+"Tulen",
+"Iggy",
+"Helen",
+"Valhein"
+]
+},
+"Arum": {
+"countered_by": [
+"Thane",
+"Alice",
+"Gildur",
+"Toro",
+"Baldum"
+],
+"allies": [
+"Hayate",
+"Laville",
+"Capheny",
+"Valhein",
+"Tel’Annas"
+]
+},
+"Errol": {
+"countered_by": [
+"Alice",
+"Liliana",
+"Lữ Bố",
+"Slimz",
+"Zephys"
+],
+"allies": [
+"Krizzix",
+"Zip",
+"Alice",
+"Baldum",
+"Krixi"
+]
+},
+"Taara": {
+"countered_by": [
+"Alice",
+"Baldum",
+"Thane",
+"Toro",
+"Gildur"
+],
+"allies": [
+"Hayate",
+"Tel’Annas",
+"Valhein",
+"Laville",
+"Capheny"
+]
+},
+"Annette": {
+"countered_by": [
+"Alice",
+"Baldum",
+"Thane",
+"Hayate",
+"Eland’orr"
+],
+"allies": [
+"Capheny",
+"Laville",
+"Hayate",
+"Tel’Annas",
+"Valhein"
+]
+},
+"Wiro": {
+"countered_by": [
+"Cresht",
+"Baldum",
+"Thane",
+"Toro",
+"Gildur"
+],
+"allies": [
+"Hayate",
+"Tel’Annas",
+"Valhein",
+"Laville",
+"Capheny"
+]
+}
+}
+}
