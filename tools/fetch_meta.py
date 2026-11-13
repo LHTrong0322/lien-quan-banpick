@@ -116,7 +116,18 @@ def tournaments():
     cfg = json.load(open(f'{OUT}/sources.json'))
     for reg in cfg['leagues']:
         done = False
-        for page in reg['pages']:  # thử mùa mới nhất trước
+        # Tự đoán 2 mùa kế tiếp từ mùa hiện tại (VD: RPL 2026 Winter → 2027 Summer → 2027 Winter)
+        base, yr, ss = reg['current'].split('/')
+        order = reg.get('seasons', [])
+        pages, y, k = [], int(yr), order.index(ss) if ss in order else -1
+        if k >= 0:
+            for _ in range(2):
+                k += 1
+                if k == len(order): k, y = 0, y + 1
+                pages.insert(0, f'{base}/{y}/{order[k]}')
+        pages += [p for p in reg.get('pages', []) if p not in pages] + [reg['current']]
+        seen = set(); pages = [p for p in pages if not (p in seen or seen.add(p))]
+        for page in pages:  # thử mùa mới nhất trước
             try:
                 games, rows = liquipedia(page)
                 time.sleep(31)  # giới hạn của Liquipedia: 1 lần parse / 30 giây
