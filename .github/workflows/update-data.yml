@@ -4,6 +4,9 @@ on:
   schedule:
     - cron: "17 20 * * 0"   # 03:17 sáng thứ Hai giờ Việt Nam
   workflow_dispatch: {}      # cho phép bấm chạy tay trong tab Actions
+  push:
+    branches: [main]
+    paths: ["tools/**", "data_pro/sources.json", ".github/workflows/update-data.yml"]
 
 permissions:
   contents: write
@@ -20,7 +23,9 @@ jobs:
         run: |
           git clone --depth 1 https://github.com/MLuc24/lien-quan-data /tmp/lqd
           git clone --depth 1 https://github.com/LKTNLAC/Arena-of-Valor-Draft-Suggestion /tmp/aov
-          pip install pillow
+          pip install pillow beautifulsoup4
+      - name: Lấy số liệu rank VN/TH + giải đấu mới nhất
+        run: python3 tools/fetch_meta.py data_pro
       - name: Dựng lại data.js và ảnh tướng
         run: python3 tools/build_data.py /tmp/lqd /tmp/aov . data_pro
       - name: Lưu thay đổi (nếu có)

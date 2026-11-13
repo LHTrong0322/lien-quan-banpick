@@ -134,7 +134,13 @@ def pid(n):
     return k if k in ids else None
 PRO, PAIRS, REG = {}, {}, []
 if PRO_DIR:
-    for fn, reg, label in [('aog_winter_2026.txt', 'vn', 'ĐTDV mùa Đông 2026'), ('rpl_winter_2026.txt', 'th', 'RPL Winter 2026'), ('gcs_summer_2026.txt', 'tw', 'GCS Summer 2026')]:
+    LEAGUE = {'Arena_of_Glory': 'ĐTDV', 'RoV_Pro_League': 'RPL', 'Garena_Challenger_Series': 'GCS'}
+    SEASON = {'Spring': 'Xuân', 'Summer': 'Hè', 'Winter': 'Đông', 'Fall': 'Thu'}
+    src = json.load(open(f'{PRO_DIR}/sources.json'))['leagues']
+    for lg in src:
+        fn, reg = lg['file'], lg['region']
+        nm, yr, ss = lg['current'].split('/')
+        label = f"{LEAGUE.get(nm, nm)} mùa {SEASON.get(ss, ss)} {yr}"
         raw = open(f'{PRO_DIR}/{fn}').read().strip()
         games, body = raw.split('#', 1)
         games = int(games); REG.append([reg, label, games])
@@ -173,6 +179,11 @@ if PRO_DIR:
     for line in open(f'{PRO_DIR}/rank_th_rovmeta.txt'):
         if line.startswith('#') or ':' not in line: continue
         t_, names = line.strip().split(':', 1)
+        if t_ == 'PRO':  # nhóm "Pro" không có hạng trên rovmeta → tạm xếp A
+            low = ' ' + names.lower() + ' '
+            for x in heroes:
+                if ' ' + x['name'].lower() + ' ' in low: RANK.setdefault(x['id'], {}).setdefault('th', 'A')
+            continue
         for n_ in names.split(','):
             hid = pid(n_)
             if hid: RANK.setdefault(hid, {})['th'] = t_
@@ -207,6 +218,10 @@ for (a, b), regs in PAIRS.items():
         COMBOS.append([a, b, n, w, ''.join(sorted(regs))])
 COMBOS.sort(key=lambda c: -((c[3] + 3) / (c[2] + 6)))
 
+import datetime
+UPDATED = datetime.date.today().strftime('%d/%m/%Y')
+if PRO_DIR and os.path.exists(f'{PRO_DIR}/last_update.txt'):
+    UPDATED = open(f'{PRO_DIR}/last_update.txt').readline().strip() or UPDATED
 js = ('// Tự sinh bởi build_data.py — không sửa tay\n'
       f'const HEROES={json.dumps(heroes, ensure_ascii=False, separators=(",", ":"))};\n'
       f'const COUNTERS={json.dumps(cnt, separators=(",", ":"))};\n'
@@ -214,6 +229,7 @@ js = ('// Tự sinh bởi build_data.py — không sửa tay\n'
       f'const PRO={json.dumps(PRO, separators=(",", ":"))};\n'
       f'const COMBOS={json.dumps(COMBOS, separators=(",", ":"))};\n'
       f'const COUNTER_ITEMS={json.dumps(MF_ITEMS, ensure_ascii=False, separators=(",", ":"))};\n'
+      f'const UPDATED={json.dumps(UPDATED, ensure_ascii=False)};\n'
       f'const REGIONS={json.dumps(REG, ensure_ascii=False, separators=(",", ":"))};\n')
 open(f'{OUT}/data.js', 'w').write(js)
 print(len(PRO), 'pro heroes', len(COMBOS), 'combos');print(len(heroes), 'heroes', sum(1 for x in heroes if x['img']), 'imgs', len(cnt), 'counters', len(sy), 'syn')

@@ -357,4 +357,5 @@ document.getElementById('msearch').addEventListener('input',e=>{M.q=e.target.val
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.getElementById('modal').hidden)closeModal()});
 /* Tự chuyển tab gợi ý theo lượt của đội bạn */
 let lastStep='';const _render=render;render=function(){const sp=step();const key=sp?sp.kind+sp.side+sp.n:'done';if(key!==lastStep){lastStep=key;if(sp&&sp.side==='ally')st.mode=sp.kind==='ban'?'ban':'pick'}_render()};
+document.getElementById('upd').innerHTML='🔄 Số liệu cập nhật: <b>'+UPDATED+'</b> · tự làm mới mỗi sáng thứ Hai';
 render();

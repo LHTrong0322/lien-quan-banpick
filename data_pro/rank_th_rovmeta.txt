@@ -1,5 +1,6 @@
 # Nguồn: rovmeta.com/tier-list — tier rank máy chủ Thái (patch 1.64, cập nhật 13/11/2026). S = nhóm S+ trên trang
 S:Aya,Butterfly,Paine,Nakroth,Stuart,Eland'orr,Bonnie,Florentino,Violet,Liliana,Yan,Bijan,Yue,Yena,Zata,Billow,Capheny
-A:Zip,Erin,Richter,Sinestrea,Kriknak,Slimz,Xeniel,Tulen,Y'bneth,Zephys,Ignis,Ilumia,Ormarr,Dirak,Ming,Kil'Groth,Bolt Baron,Zuka,Lu Bu,Dolia,Tachi,Teeri,Raz,Krixi,Baldum,Veres,Goverra,Rouie,Qi,Maloch,Rourke,Elsu,Krizzix,Allain,Helen,Bright,Heino,Grakk,Quillen,Fennik,Aleister,The Flash,Dextra,Diao Chan,Amily,Lumburr,Ryoma,Omen,Charlotte,Biron,Iggy,Keera,TeeMee,Hayate,Lorion,Thane,Wonder Woman
+A:Zip,Erin,Richter,Sinestrea,Kriknak,Slimz,Xeniel,Tulen,Y'bneth,Zephys,Ignis,Ilumia,Ormarr,Dirak,Ming,Kil'Groth,Bolt Baron,Zuka,Lu Bu,Dolia,Tachi,Teeri,Raz,Krixi,Baldum,Veres,Goverra,Rouie,Qi,Maloch,Rourke,Elsu,Krizzix,Allain,Helen,Bright,Heino,Grakk,Quillen,Fennik,Aleister,The Flash,Dextra,Diao Chan,Amily,Lumburr,Ryoma,Omen,Charlotte,Biron,Iggy
 B:Marja,Tel'Annas,Mina,Yorn,Kaine,Arduin,Wisp,Evita,Dyadia,Superman,Flowborn,Azzen'Ka,Volkath,Thorne,Lauriel,Skud,Moren,Mganga,Airi,Ata,Arthur,Murad,Valhein,Toro,Alice,Edras,Zill,Chaugnar,Laville
 C:Taara,Cresht,Sephera,Lindis,Zanis,Max,Tamyn,D'Arcy,Preyta,Veera,Roxie,Enzo,Wiro,Ishar,Errol,Arum,Omega,Wukong,Kahlii,Annette,Astrid,Jinnar,Natalya,Gildur,Aoi
+PRO:Keera TeeMee Hayate Lorion Thane Wonder Woman
