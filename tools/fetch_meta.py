@@ -7,7 +7,7 @@
 Nguồn nào lỗi thì giữ nguyên file cũ, không làm hỏng web.
 Cách dùng: python3 tools/fetch_meta.py data_pro
 """
-import gzip, json, re, sys, time, urllib.request, urllib.parse, datetime, html as H
+import gzip, json, re, sys, time, urllib.request, urllib.parse, urllib.error, datetime, html as H
 from bs4 import BeautifulSoup
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else 'data_pro'
@@ -16,7 +16,17 @@ TODAY = datetime.date.today().strftime('%d/%m/%Y')
 report = []
 
 
-def get(url):
+def get(url, retry=True):
+    try:
+        return _get(url)
+    except urllib.error.HTTPError as e:
+        if e.code == 429 and retry:  # bị giới hạn → chờ rồi thử lại 1 lần
+            time.sleep(90)
+            return get(url, False)
+        raise
+
+
+def _get(url):
     req = urllib.request.Request(url, headers={'User-Agent': UA, 'Accept-Encoding': 'gzip'})
     with urllib.request.urlopen(req, timeout=60) as r:
         raw = r.read()
@@ -112,8 +122,17 @@ def liquipedia(page):
     return games, out
 
 
+def existing(pages):
+    # 1 lần hỏi duy nhất (action=query, rẻ hơn parse) để biết trang mùa nào đã có trên Liquipedia
+    titles = '|'.join(p + '/Statistics' for p in pages)
+    data = json.loads(get('https://liquipedia.net/honorofkings/api.php?action=query&format=json&formatversion=2&titles='
+                          + urllib.parse.quote(titles)))
+    return {pg['title'].replace(' ', '_').rsplit('/Statistics', 1)[0] for pg in data['query']['pages'] if not pg.get('missing')}
+
+
 def tournaments():
     cfg = json.load(open(f'{OUT}/sources.json'))
+    plans = []
     for reg in cfg['leagues']:
         done = False
         # Tự đoán 2 mùa kế tiếp từ mùa hiện tại (VD: RPL 2026 Winter → 2027 Summer → 2027 Winter)
@@ -127,7 +146,12 @@ def tournaments():
                 pages.insert(0, f'{base}/{y}/{order[k]}')
         pages += [p for p in reg.get('pages', []) if p not in pages] + [reg['current']]
         seen = set(); pages = [p for p in pages if not (p in seen or seen.add(p))]
-        for page in pages:  # thử mùa mới nhất trước
+        plans.append((reg, pages))
+    have = existing([p for _, ps in plans for p in ps])
+    time.sleep(3)
+    for reg, pages in plans:
+        done = False
+        for page in [p for p in pages if p in have]:  # thử mùa mới nhất trước
             try:
                 games, rows = liquipedia(page)
                 time.sleep(31)  # giới hạn của Liquipedia: 1 lần parse / 30 giây
