@@ -1,0 +1,12 @@
+13/11/2026
+Rank VN: 129 tướng
+Rank TH: 125 tướng
+vn: bỏ qua Arena_of_Glory/2027/Spring (HTTPError: HTTP Error 403: Forbidden)
+vn: bỏ qua Arena_of_Glory/2026/Winter (HTTPError: HTTP Error 403: Forbidden)
+vn: giữ số liệu cũ
+th: bỏ qua RoV_Pro_League/2027/Summer (HTTPError: HTTP Error 403: Forbidden)
+th: bỏ qua RoV_Pro_League/2026/Winter (HTTPError: HTTP Error 403: Forbidden)
+th: giữ số liệu cũ
+tw: bỏ qua Garena_Challenger_Series/2027/Spring (HTTPError: HTTP Error 403: Forbidden)
+tw: bỏ qua Garena_Challenger_Series/2026/Summer (HTTPError: HTTP Error 403: Forbidden)
+tw: giữ số liệu cũ

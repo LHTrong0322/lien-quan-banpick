@@ -1,11 +1,35 @@
 {
   "note": "Danh sách trang thống kê Liquipedia. Bot thử từ trên xuống: mùa mới nhất có đủ số ván sẽ được dùng. Mùa mới ra thì thêm tên trang lên đầu danh sách.",
   "leagues": [
-    {"region": "vn", "file": "pro_vn.txt", "min_games": 60,
-     "pages": ["Arena_of_Glory/2027/Spring", "Arena_of_Glory/2026/Winter"], "current": "Arena_of_Glory/2026/Winter"},
-    {"region": "th", "file": "pro_th.txt", "min_games": 60,
-     "pages": ["RoV_Pro_League/2027/Summer", "RoV_Pro_League/2026/Winter"], "current": "RoV_Pro_League/2026/Winter"},
-    {"region": "tw", "file": "pro_tw.txt", "min_games": 40,
-     "pages": ["Garena_Challenger_Series/2027/Spring", "Garena_Challenger_Series/2026/Summer"], "current": "Garena_Challenger_Series/2026/Summer"}
+    {
+      "region": "vn",
+      "file": "pro_vn.txt",
+      "min_games": 60,
+      "pages": [
+        "Arena_of_Glory/2027/Spring",
+        "Arena_of_Glory/2026/Winter"
+      ],
+      "current": "Arena_of_Glory/2026/Winter"
+    },
+    {
+      "region": "th",
+      "file": "pro_th.txt",
+      "min_games": 60,
+      "pages": [
+        "RoV_Pro_League/2027/Summer",
+        "RoV_Pro_League/2026/Winter"
+      ],
+      "current": "RoV_Pro_League/2026/Winter"
+    },
+    {
+      "region": "tw",
+      "file": "pro_tw.txt",
+      "min_games": 40,
+      "pages": [
+        "Garena_Challenger_Series/2027/Spring",
+        "Garena_Challenger_Series/2026/Summer"
+      ],
+      "current": "Garena_Challenger_Series/2026/Summer"
+    }
   ]
 }
