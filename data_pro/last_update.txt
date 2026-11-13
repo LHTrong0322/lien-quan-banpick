@@ -1,12 +1,9 @@
 13/11/2026
 Rank VN: 129 tướng
 Rank TH: 125 tướng
-vn: bỏ qua Arena_of_Glory/2027/Spring (HTTPError: HTTP Error 403: Forbidden)
-vn: bỏ qua Arena_of_Glory/2026/Winter (HTTPError: HTTP Error 403: Forbidden)
-vn: giữ số liệu cũ
-th: bỏ qua RoV_Pro_League/2027/Summer (HTTPError: HTTP Error 403: Forbidden)
-th: bỏ qua RoV_Pro_League/2026/Winter (HTTPError: HTTP Error 403: Forbidden)
-th: giữ số liệu cũ
-tw: bỏ qua Garena_Challenger_Series/2027/Spring (HTTPError: HTTP Error 403: Forbidden)
-tw: bỏ qua Garena_Challenger_Series/2026/Summer (HTTPError: HTTP Error 403: Forbidden)
-tw: giữ số liệu cũ
+vn: bỏ qua Arena_of_Glory/2027/Spring (ValueError: The page you specified doesn't exist.)
+vn: Arena_of_Glory/2026/Winter (327 ván, 89 tướng)
+th: bỏ qua RoV_Pro_League/2027/Summer (ValueError: The page you specified doesn't exist.)
+th: RoV_Pro_League/2026/Winter (307 ván, 93 tướng)
+tw: bỏ qua Garena_Challenger_Series/2027/Spring (ValueError: The page you specified doesn't exist.)
+tw: Garena_Challenger_Series/2026/Summer (188 ván, 85 tướng)
