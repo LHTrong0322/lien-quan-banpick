@@ -215,3 +215,13 @@ footer p{margin:6px 0}
 .mtier.tS{background:var(--S)}.mtier.tA{background:var(--A)}.mtier.tB{background:var(--B)}.mtier.tC{background:#5b6690}
 @media (max-width:640px){.combos{grid-template-columns:1fr}.ctab{font-size:12px;padding:8px 4px}}
 .chip .w2{font-size:11px;color:var(--muted);line-height:1.45}
+.tip{font-size:12px;line-height:1.45;color:#d9def0;background:rgba(245,196,81,.08);border-left:3px solid var(--gold);border-radius:8px;padding:6px 8px}
+.mb{font-size:10px;font-weight:800;border-radius:6px;padding:1px 6px;vertical-align:middle;color:#fff}
+.mb.tS{background:var(--S)}.mb.tA{background:var(--A)}.mb.tB{background:var(--B)}
+.coach{grid-column:1/-1;border-color:rgba(245,196,81,.45);background:linear-gradient(180deg,rgba(245,196,81,.08),var(--panel) 50%)}
+.coach h3{color:var(--gold)!important}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px}
+.citem{background:var(--bg2);border-radius:12px;padding:10px 12px}
+.ct{font-weight:800;font-size:13px;margin-bottom:4px}
+.cb{font-size:13px;line-height:1.55;color:#d3d9ee}
+.good{color:#4ade80;font-weight:700}.bad{color:#ff8a96;font-weight:700}

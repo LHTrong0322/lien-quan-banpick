@@ -44,7 +44,7 @@ EARLY = {'valhein','ryoma','nakroth','zephys','errol','omen','amily','thane','zu
 LATE = {'yorn','telannas','capheny','laville','hayate','thorne','murad','florentino','yena','butterfly','lubu','elandorr','erin','stuart','allain','yan','tulen','raz','liliana'}
 ENGAGE = {'thane','toro','mina','lumburr','omega','wiro','roxie','baldum','ormarr','arum','grakk','cresht','gildur','ybneth','ata','max','skud','superman','qi','arduin','maloch','teemee','xeniel'}
 ADD = {'nakroth':'d','kahlii':'n','zill':'bdu','raz':'b','liliana':'b','tulen':'b','zata':'b','krixi':'p','airi':'b','keera':'d','quillen':'d','ngokhong':'d','toro':'c','thane':'c','grakk':'c','arum':'c','aleister':'c','teemee':'c','sinestrea':'b','kriknak':'d'}
-Q = ['arum','aleister','grakk','toro','thane','ormarr','lumburr','baldum','mina','gildur','ybneth','cresht','ignis','azzenka','ilumia','veera','tulen','lorion','omen','amily','qi','ata','max','skud','superman','wonderwoman','enzo','airi','ishar','alice','annette','rouie','kahlii','dieuthuyen','omega','wiro','roxie','arduin','teemee','xeniel']
+Q = ['arum','aleister','grakk','toro','thane','ormarr','lumburr','baldum','mina','gildur','ybneth','cresht','ignis','azzenka','ilumia','veera','lorion','omen','amily','qi','ata','max','skud','superman','wonderwoman','enzo','airi','ishar','alice','annette','rouie','kahlii','dieuthuyen','omega','wiro','roxie','arduin','teemee','xeniel']
 for q in Q: ADD[q] = ADD.get(q,'') + 'qc'
 REM = {'arum':'dx','thane':'x'}
 # Meta mùa S3-2026 (tổng hợp từ các bảng xếp hạng & tỷ lệ cấm công khai, 6–11/2026)
@@ -68,6 +68,10 @@ for h in g:
     for r in (c or {}).get('roles', []):
         if LANE_C[r] not in lanes: lanes.append(LANE_C[r])
     if not lanes: lanes = ['M']
+    # đường phụ (từ dữ liệu cộng đồng) chỉ giữ khi hợp lớp tướng
+    FIT = {'T': {'Đấu sĩ', 'Đỡ đòn'}, 'J': {'Sát thủ', 'Đấu sĩ'}, 'M': {'Pháp sư'}, 'A': {'Xạ thủ'}, 'S': {'Trợ thủ', 'Đỡ đòn'}}
+    cls_ = set(h.get('classes', []))
+    lanes = lanes[:1] + [l for l in lanes[1:] if FIT[l] & cls_]
     tags = set(h.get('tags', []))
     eff = {e for s in h['skills'] for e in s.get('effects', [])}
     desc = ' '.join(s.get('description', '') for s in h['skills'])
@@ -91,6 +95,43 @@ for h in g:
     if k in EARLY: f.add('e')
     if k in LATE: f.add('l')
     if k in ENGAGE: f.add('g')
+    # ----- chiêu thức tiêu biểu cho từng vai trò (để viết bài đánh cụ thể) -----
+    CC_RANK = ['Áp chế', 'Choáng', 'Hất tung', 'Khiêu khích', 'Đóng băng', 'Trói chân', 'Câm lặng', 'Đẩy lùi', 'Khống chế']
+    def pick(test, prefer_ult=False):
+        sks = [x for x in h['skills'] if x['slot'] != 'passive'] or h['skills']
+        if prefer_ult: sks = sks[::-1]
+        for x in sks:
+            r = test(x)
+            if r: return [x['slotLabel'], x['name'], r if isinstance(r, str) else '']
+        return None
+    def cc_test(x):
+        eff = x.get('effects', [])
+        for e in CC_RANK:
+            if e in eff: return e.lower()
+        m = HARD_CC.search(x.get('description', ''))
+        return m.group(0).lower() if m else None
+    sk = {}
+    best = None
+    for x in [y for y in h['skills'] if y['slot'] != 'passive']:
+        r = cc_test(x)
+        if r and (best is None or CC_RANK.index(r.capitalize()) < CC_RANK.index(best[2].capitalize()) if r.capitalize() in CC_RANK and best and best[2].capitalize() in CC_RANK else best is None):
+            best = [x['slotLabel'], x['name'], r]
+    if best: sk['cc'] = best
+    for key, test, ult in [
+        ('dash', lambda x: 'Dịch chuyển' in x.get('effects', []) or re.search(r'\blướt|lao (tới|đến|về)|dịch chuyển|biến đến|nhảy', x.get('description', ''), re.I), False),
+        ('tru', lambda x: ('Chuẩn' in x.get('effects', []) or PCT_HP.search(x.get('description', ''))) and 'sát thương chuẩn' if 'Chuẩn' in x.get('effects', []) else ('sát thương theo % máu' if PCT_HP.search(x.get('description', '')) else None), True),
+        ('imm', lambda x: ('Miễn khống' in x.get('effects', []) or 'Giải khống' in x.get('effects', []) or re.search(r'miễn nhiễm khống chế|miễn khống|giải trừ khống chế|kháng hiệu ứng', x.get('description', ''), re.I)) and 'miễn khống chế', False),
+        ('unt', lambda x: ({'Không bị khóa mục tiêu', 'Vô địch', 'Miễn nhiễm'} & set(x.get('effects', []))) and 'không thể bị chọn làm mục tiêu', False),
+        ('inv', lambda x: ('Ẩn thân' in x.get('effects', []) or re.search(r'tàng hình|ẩn thân', x.get('description', ''), re.I)) and 'tàng hình', False),
+        ('heal', lambda x: ('Hồi phục' in x.get('effects', []) or re.search(r'hồi (phục )?\d|hồi lại|hồi máu|hút máu', x.get('description', ''), re.I)) and 'hồi máu', False),
+        ('shield', lambda x: ({'Lá chắn', 'Miễn thương'} & set(x.get('effects', []))) and 'lá chắn/giảm sát thương', False),
+        ('chan', lambda x: CHANNEL.search(x.get('description', '')) and 'vận chiêu', False),
+        ('ult', lambda x: x['slot'] == '3' and 'chiêu cuối', False),
+    ]:
+        r = pick(test, ult)
+        if r: sk[key] = r
+    if 'cc' in sk: f.add('c')
+    if 'cc' in sk and sk['cc'][2] in ('áp chế', 'choáng', 'hất tung', 'khiêu khích', 'đóng băng', 'trói chân'): f.add('q')
     f |= set(ADD.get(k,''))
     f -= set(REM.get(k,''))
     if 't' in f: f.discard('r')
@@ -101,12 +142,21 @@ for h in g:
         Image.open(f"{C}/{c['image']}").convert('RGB').resize((112, 112), Image.LANCZOS).save(f'{OUT}/{img}', 'WEBP', quality=80)
     if not img and h.get('portrait'): img = h['portrait']  # ảnh trên trang Garena (chỉ hiện khi web chạy ngoài Claude)
     heroes.append({'id': k, 'cid': (c or {}).get('id'), 'name': h['name'].replace('’', "'"), 'title': h.get('title', ''),
-                   'cls': cls, 'lanes': lanes, 'f': ''.join(sorted(f)), 'img': img, 'meta': 0})
+                   'cls': cls, 'lanes': lanes, 'f': ''.join(sorted(f)), 'img': img, 'meta': 0, 'sk': sk})
 
+# ánh xạ tên tướng ở các nguồn khác về id
+PRO_NAME = {'wirosableng': 'wiro', 'zanis': 'trieuvan', 'diaochan': 'dieuthuyen', 'lubu': 'lubo', 'jinnar': 'jinna', 'flowborn': 'flowborn'}
+ids = {x['id'] for x in heroes}
+def pid(n):
+    k = norm(n.replace('*', '').replace('^', ''))
+    k = PRO_NAME.get(k, k)
+    return k if k in ids else None
+VS = {}
 cid2id = {x['cid']: x['id'] for x in heroes if x['cid']}
 # Bổ sung từ Thien21112005/aov-metaforge (MIT): chỉ lấy 29 tướng có dữ liệu riêng (bỏ mẫu chung)
 ITEMS = {i['name'].lower(): i['name'] for i in json.load(open(f'{G}/data/items.json'))}
 MF_ITEMS = {}
+MF_TIPS = {}
 MF_CNT = []
 mf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'metaforge.json')
 if os.path.exists(mf_path):
@@ -116,6 +166,7 @@ if os.path.exists(mf_path):
         k = norm(h['id'].replace('-', ''))
         if k not in ids_: continue
         its = [ITEMS[i.lower()] for i in h.get('counter_items', []) if i.lower() in ITEMS]
+        if h.get('counter_tips'): MF_TIPS[k] = h['counter_tips']
         if its: MF_ITEMS[k] = its
         for e in h.get('countered_by', []):
             e = norm(e.replace('-', ''))
@@ -123,15 +174,29 @@ if os.path.exists(mf_path):
 cnt = [[cid2id[x['heroA']], cid2id[x['heroB']], x['score']] for x in counters if x['heroA'] in cid2id and x['heroB'] in cid2id]
 cnt_set = {(a, b) for a, b, _ in cnt}
 cnt += [[a, b, 6] for a, b in MF_CNT if (a, b) not in cnt_set]
+# Kèo khắc chế + đồng minh từ lienquanmobile.gg (VN): "Tướng khắc chế X" → [counter, X]
+LQ_ALLY = []
+if PRO_DIR and os.path.exists(f'{PRO_DIR}/lqmb_matchups.json'):
+    lq = json.load(open(f'{PRO_DIR}/lqmb_matchups.json'))['heroes']
+    cnt_d = {(a, b): i for i, (a, b, _) in enumerate(cnt)}
+    for nm, d in lq.items():
+        hid = pid(nm)
+        if not hid: continue
+        for i_, c in enumerate(d.get('countered_by', [])):
+            a = pid(c)
+            if not a or a == hid: continue
+            sc = 8 - min(i_, 3)  # xếp đầu danh sách = khắc chế mạnh hơn
+            if (a, hid) in cnt_d: cnt[cnt_d[(a, hid)]][2] = max(cnt[cnt_d[(a, hid)]][2], sc) + 1
+            else: cnt.append([a, hid, sc]); cnt_d[(a, hid)] = len(cnt) - 1
+        for c in d.get('allies', []):
+            a = pid(c)
+            if a and a != hid: LQ_ALLY.append([hid, a, 6])
+
 sy = [[cid2id[x['heroA']], cid2id[x['heroB']], x['score']] for x in syn if x['heroA'] in cid2id and x['heroB'] in cid2id]
+sy_set = {tuple(sorted(x[:2])) for x in sy}
+sy += [x for x in LQ_ALLY if tuple(sorted(x[:2])) not in sy_set]
 for x in heroes: x.pop('cid')
 # ===== Dữ liệu giải đấu chuyên nghiệp (Liquipedia): VN = ĐTDV, TH = RPL, TW = GCS =====
-PRO_NAME = {'wirosableng': 'wiro', 'zanis': 'trieuvan', 'diaochan': 'dieuthuyen', 'lubu': 'lubo', 'jinnar': 'jinna', 'flowborn': 'flowborn'}
-ids = {x['id'] for x in heroes}
-def pid(n):
-    k = norm(n.replace('*', '').replace('^', ''))
-    k = PRO_NAME.get(k, k)
-    return k if k in ids else None
 PRO, PAIRS, REG = {}, {}, []
 if PRO_DIR:
     LEAGUE = {'Arena_of_Glory': 'ĐTDV', 'RoV_Pro_League': 'RPL', 'Garena_Challenger_Series': 'GCS'}
@@ -158,6 +223,12 @@ if PRO_DIR:
                 if not h2 or h2 == hid: continue
                 key = tuple(sorted((hid, h2)))
                 PAIRS.setdefault(key, {})[reg] = (int(n), int(ww))
+            vs = parts[5] if len(parts) > 5 and ':' in parts[5] else ''
+            for it in filter(None, vs.split(',')):  # đối đầu trực tiếp ở giải: hid gặp h2, thắng ww/n
+                nm, n, ww = it.rsplit(':', 2)
+                h2 = pid(nm)
+                if not h2 or h2 == hid: continue
+                o = VS.setdefault((hid, h2), [0, 0]); o[0] += int(n); o[1] += int(ww)
     # điểm meta mỗi khu vực = độ phổ biến (pick + cấm trên tổng ván) + tỉ lệ thắng đã làm mượt
     G = {r[0]: r[2] for r in REG}
     for hid, d in PRO.items():
@@ -218,6 +289,7 @@ for (a, b), regs in PAIRS.items():
         COMBOS.append([a, b, n, w, ''.join(sorted(regs))])
 COMBOS.sort(key=lambda c: -((c[3] + 3) / (c[2] + 6)))
 
+PROVS = [[a, b, n, w] for (a, b), (n, w) in VS.items() if n >= 5]  # đối đầu trực tiếp ở giải
 import datetime
 UPDATED = datetime.date.today().strftime('%d/%m/%Y')
 if PRO_DIR and os.path.exists(f'{PRO_DIR}/last_update.txt'):
@@ -229,6 +301,8 @@ js = ('// Tự sinh bởi build_data.py — không sửa tay\n'
       f'const PRO={json.dumps(PRO, separators=(",", ":"))};\n'
       f'const COMBOS={json.dumps(COMBOS, separators=(",", ":"))};\n'
       f'const COUNTER_ITEMS={json.dumps(MF_ITEMS, ensure_ascii=False, separators=(",", ":"))};\n'
+      f'const PROVS={json.dumps(PROVS, separators=(",", ":"))};\n'
+      f'const COUNTER_TIPS={json.dumps(MF_TIPS, ensure_ascii=False, separators=(",", ":"))};\n'
       f'const UPDATED={json.dumps(UPDATED, ensure_ascii=False)};\n'
       f'const REGIONS={json.dumps(REG, ensure_ascii=False, separators=(",", ":"))};\n')
 open(f'{OUT}/data.js', 'w').write(js)
