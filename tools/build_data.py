@@ -8,6 +8,7 @@ from PIL import Image
 G = sys.argv[1]   # đường dẫn lien-quan-data
 C = sys.argv[2]   # đường dẫn Arena-of-Valor-Draft-Suggestion
 OUT = sys.argv[3] # thư mục site
+PRO_DIR = sys.argv[4] if len(sys.argv) > 4 else None  # thư mục dữ liệu giải đấu (data/pro)
 
 def norm(s):
     s = unicodedata.normalize('NFD', s.replace('đ', 'd').replace('Đ', 'D'))
@@ -35,7 +36,7 @@ LANE_C = {'Top': 'T', 'Jungle': 'J', 'Mid': 'M', 'ADC': 'A', 'Support': 'S'}
 
 HARD_CC = re.compile(r'choáng|hất tung|áp chế|câm lặng|trói|kéo .{0,20}(về|lại)|khiêu khích|đóng băng|hóa đá|mê hoặc|làm ngủ', re.I)
 CHANNEL = re.compile(r'vận (sức|công|chiêu)|niệm chú|trong thời gian vận|liên tục trong .{0,10}giây.{0,40}(không thể di chuyển|đứng yên)', re.I)
-PCT_HP = re.compile(r'% máu tối đa|% máu đã mất|máu tối đa của (mục tiêu|nạn nhân|kẻ địch)', re.I)
+PCT_HP = re.compile(r'% máu đã mất|% máu tối đa của (mục tiêu|nạn nhân|kẻ địch|đối phương)|máu tối đa của (mục tiêu|nạn nhân|kẻ địch)', re.I)
 
 # Bổ sung tay những đặc điểm khó suy ra từ mô tả kỹ năng
 POKE = {'elsu','krixi','dirak','preyta','ignis','iggy','yue','jinna','azzenka','darcy','ilumia','heino','flowborn','lorion','ishar','evita'}
@@ -78,7 +79,7 @@ for h in g:
     if 'Trợ thủ' in cls and ({'Hồi máu', 'Lá chắn'} & tags): f.add('h')
     if 'Dịch chuyển' in tags: f.add('d')
     if 'Hồi máu' in tags or 'Hồi phục' in eff: f.add('s')
-    if 'Sát thương chuẩn' in tags or PCT_HP.search(desc): f.add('x')
+    if ('Sát thương chuẩn' in tags or PCT_HP.search(desc)) and not ({'Đỡ đòn', 'Trợ thủ'} & set(cls)): f.add('x')
     if 'Miễn khống' in tags or {'Giải khống', 'Miễn khống'} & eff: f.add('w')
     if {'Không bị khóa mục tiêu', 'Vô địch', 'Miễn nhiễm'} & eff: f.add('u')
     if 'Tàng hình' in tags or 'Ẩn thân' in eff: f.add('i')
@@ -98,19 +99,124 @@ for h in g:
     if c and c.get('image') and os.path.exists(f"{C}/{c['image']}"):
         img = f'img/{k}.webp'
         Image.open(f"{C}/{c['image']}").convert('RGB').resize((112, 112), Image.LANCZOS).save(f'{OUT}/{img}', 'WEBP', quality=80)
+    if not img and h.get('portrait'): img = h['portrait']  # ảnh trên trang Garena (chỉ hiện khi web chạy ngoài Claude)
     heroes.append({'id': k, 'cid': (c or {}).get('id'), 'name': h['name'].replace('’', "'"), 'title': h.get('title', ''),
-                   'cls': cls, 'lanes': lanes, 'f': ''.join(sorted(f)), 'img': img, 'meta': META.get(k, 0)})
+                   'cls': cls, 'lanes': lanes, 'f': ''.join(sorted(f)), 'img': img, 'meta': 0})
 
 cid2id = {x['cid']: x['id'] for x in heroes if x['cid']}
+# Bổ sung từ Thien21112005/aov-metaforge (MIT): chỉ lấy 29 tướng có dữ liệu riêng (bỏ mẫu chung)
+ITEMS = {i['name'].lower(): i['name'] for i in json.load(open(f'{G}/data/items.json'))}
+MF_ITEMS = {}
+MF_CNT = []
+mf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'metaforge.json')
+if os.path.exists(mf_path):
+    ids_ = {x['id'] for x in heroes}
+    for h in json.load(open(mf_path)):
+        if h.get('counter_tips', '').startswith('Chú ý lượng trang bị'): continue
+        k = norm(h['id'].replace('-', ''))
+        if k not in ids_: continue
+        its = [ITEMS[i.lower()] for i in h.get('counter_items', []) if i.lower() in ITEMS]
+        if its: MF_ITEMS[k] = its
+        for e in h.get('countered_by', []):
+            e = norm(e.replace('-', ''))
+            if e in ids_ and e != k: MF_CNT.append([e, k])
 cnt = [[cid2id[x['heroA']], cid2id[x['heroB']], x['score']] for x in counters if x['heroA'] in cid2id and x['heroB'] in cid2id]
+cnt_set = {(a, b) for a, b, _ in cnt}
+cnt += [[a, b, 6] for a, b in MF_CNT if (a, b) not in cnt_set]
 sy = [[cid2id[x['heroA']], cid2id[x['heroB']], x['score']] for x in syn if x['heroA'] in cid2id and x['heroB'] in cid2id]
 for x in heroes: x.pop('cid')
+# ===== Dữ liệu giải đấu chuyên nghiệp (Liquipedia): VN = ĐTDV, TH = RPL, TW = GCS =====
+PRO_NAME = {'wirosableng': 'wiro', 'zanis': 'trieuvan', 'diaochan': 'dieuthuyen', 'lubu': 'lubo', 'jinnar': 'jinna', 'flowborn': 'flowborn'}
+ids = {x['id'] for x in heroes}
+def pid(n):
+    k = norm(n.replace('*', '').replace('^', ''))
+    k = PRO_NAME.get(k, k)
+    return k if k in ids else None
+PRO, PAIRS, REG = {}, {}, []
+if PRO_DIR:
+    for fn, reg, label in [('aog_winter_2026.txt', 'vn', 'ĐTDV mùa Đông 2026'), ('rpl_winter_2026.txt', 'th', 'RPL Winter 2026'), ('gcs_summer_2026.txt', 'tw', 'GCS Summer 2026')]:
+        raw = open(f'{PRO_DIR}/{fn}').read().strip()
+        games, body = raw.split('#', 1)
+        games = int(games); REG.append([reg, label, games])
+        for row in body.split(';'):
+            parts = row.split('|')
+            hid = pid(parts[0])
+            if not hid: continue
+            p, w, b = int(parts[1]), int(parts[2]), int(parts[3])
+            d = PRO.setdefault(hid, {})
+            o = d.get(reg, [0, 0, 0])
+            d[reg] = [o[0] + p, o[1] + w, o[2] + b]
+            for it in filter(None, (parts[4] if len(parts) > 4 else '').split(',')):
+                nm, n, ww = it.rsplit(':', 2)
+                h2 = pid(nm)
+                if not h2 or h2 == hid: continue
+                key = tuple(sorted((hid, h2)))
+                PAIRS.setdefault(key, {})[reg] = (int(n), int(ww))
+    # điểm meta mỗi khu vực = độ phổ biến (pick + cấm trên tổng ván) + tỉ lệ thắng đã làm mượt
+    G = {r[0]: r[2] for r in REG}
+    for hid, d in PRO.items():
+        sc = []
+        for reg, g in G.items():
+            p, w, b = d.get(reg, [0, 0, 0])
+            pres = (p + b) / g
+            wr = (w + 5) / (p + 10)
+            sc.append(pres * 100 + (wr - .5) * 60 * min(1, p / 20))
+        d['score'] = round(sum(sc) / len(sc), 1)
+    # ===== Dữ liệu đấu hạng: VN (lienquanmobile.gg) + TH (rovmeta.com) =====
+    RANK = {}
+    for line in open(f'{PRO_DIR}/rank_vn_lqmbgg.txt'):
+        if line.startswith('#') or not line.strip(): continue
+        for row in line.strip().split(';'):
+            n_, t_, wr, pr, br = row.split('|')
+            hid = pid(n_)
+            if hid: RANK.setdefault(hid, {})['vn'] = [float(wr), float(pr), float(br), t_]
+    for line in open(f'{PRO_DIR}/rank_th_rovmeta.txt'):
+        if line.startswith('#') or ':' not in line: continue
+        t_, names = line.strip().split(':', 1)
+        for n_ in names.split(','):
+            hid = pid(n_)
+            if hid: RANK.setdefault(hid, {})['th'] = t_
+    def pct(d):
+        vals = sorted(d.values()); n_ = len(vals)
+        return {k: (sum(1 for v in vals if v < x) + .5 * sum(1 for v in vals if v == x)) / n_ for k, x in d.items()}
+    P_pro = pct({k: v['score'] for k, v in PRO.items()})
+    P_vn = pct({k: v['vn'][1] + v['vn'][2] * 1.5 + (v['vn'][0] - 50) * 2 for k, v in RANK.items() if 'vn' in v})
+    TH_NUM = {'S': 1, 'A': .7, 'B': .4, 'C': .15}
+    COMB = {}
+    for x in heroes:
+        k = x['id']; parts = []
+        if k in P_pro: parts.append((.45, P_pro[k]))
+        elif PRO_DIR: parts.append((.45, 0))
+        if k in P_vn: parts.append((.3, P_vn[k]))
+        if 'th' in RANK.get(k, {}): parts.append((.25, TH_NUM[RANK[k]['th']]))
+        if parts: COMB[k] = sum(w * v for w, v in parts) / sum(w for w, _ in parts)
+    order = sorted(COMB, key=lambda k: -COMB[k]); n = len(order)
+    for x in heroes:
+        k = x['id']
+        if k in COMB:
+            i = order.index(k)
+            t = 'S' if i < n * .12 else 'A' if i < n * .35 else 'B' if i < n * .7 else 'C'
+        else: t = 'C'
+        x['tier'] = t; x['meta'] = {'S': 2, 'A': 1.2, 'B': .4, 'C': -.2}[t]
+        x['rank'] = RANK.get(k, {})
+        if k in PRO: PRO[k]['tier'] = t
+COMBOS = []
+for (a, b), regs in PAIRS.items():
+    n = sum(v[0] for v in regs.values()); w = sum(v[1] for v in regs.values())
+    if n >= 8:
+        COMBOS.append([a, b, n, w, ''.join(sorted(regs))])
+COMBOS.sort(key=lambda c: -((c[3] + 3) / (c[2] + 6)))
+
 js = ('// Tự sinh bởi build_data.py — không sửa tay\n'
       f'const HEROES={json.dumps(heroes, ensure_ascii=False, separators=(",", ":"))};\n'
       f'const COUNTERS={json.dumps(cnt, separators=(",", ":"))};\n'
-      f'const SYNERGY={json.dumps(sy, separators=(",", ":"))};\n')
+      f'const SYNERGY={json.dumps(sy, separators=(",", ":"))};\n'
+      f'const PRO={json.dumps(PRO, separators=(",", ":"))};\n'
+      f'const COMBOS={json.dumps(COMBOS, separators=(",", ":"))};\n'
+      f'const COUNTER_ITEMS={json.dumps(MF_ITEMS, ensure_ascii=False, separators=(",", ":"))};\n'
+      f'const REGIONS={json.dumps(REG, ensure_ascii=False, separators=(",", ":"))};\n')
 open(f'{OUT}/data.js', 'w').write(js)
-print(len(heroes), 'heroes', sum(1 for x in heroes if x['img']), 'imgs', len(cnt), 'counters', len(sy), 'syn')
+print(len(PRO), 'pro heroes', len(COMBOS), 'combos');print(len(heroes), 'heroes', sum(1 for x in heroes if x['img']), 'imgs', len(cnt), 'counters', len(sy), 'syn')
 print([x['name'] for x in heroes if not x['img']])
 for n in ('nakroth', 'arum', 'kahlii', 'hayate', 'thane', 'murad', 'elsu', 'aleister'):
     x = next(y for y in heroes if y['id'] == n); print(n, x['lanes'], x['f'], x['cls'])

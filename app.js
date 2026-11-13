@@ -24,6 +24,13 @@ const KNOWN={arum:["nakroth","murad","quillen","keera","florentino"],aleister:["
   toro:["nakroth","zill","murad","azzenka"],omen:["florentino","yena","allain"],thorne:["taara","thane","toro"],lorion:["murad","zill"],
   veera:["mganga"],keera:["dextra","lauriel"]};
 
+/* ===== Dữ liệu giải đấu ===== */
+const RG={vn:'🇻🇳',th:'🇹🇭',tw:'🇹🇼'};
+const GAMES=Object.fromEntries(REGIONS.map(r=>[r[0],r[2]]));
+function presence(id){const d=PRO[id];if(!d)return null;const o={};REGIONS.forEach(([r])=>{const [p,w,b]=d[r]||[0,0,0];o[r]={pb:Math.round((p+b)/GAMES[r]*100),wr:p?Math.round(w/p*100):null,p,b}});return o}
+const CMB={};COMBOS.forEach(([a,b,n,w,rg])=>{(CMB[a]=CMB[a]||{})[b]={n,w,rg};(CMB[b]=CMB[b]||{})[a]={n,w,rg}});
+const comboWR=c=>(c.w+3)/(c.n+6);
+const flags=rg=>rg.match(/../g).map(r=>RG[r]).join('');
 const isSquishy=h=>!has(h,'t')&&(h.lanes[0]==='A'||h.lanes[0]==='M');
 const N=h=>`<b>${h.name}</b>`;
 
@@ -57,10 +64,11 @@ function matchup(C,E){
 function rate(C,lane){
   let s=C.lanes[0]===lane?.4:-1.2;const r=[];
   const add=(v,t)=>{s+=v;if(t)r.push([v,t])};
-  if(C.meta) add(C.meta*.6,C.meta>1?'Đang rất mạnh trong meta S3-2026':'Đang mạnh trong meta');
+  add(C.meta*.7,C.tier==='S'||C.tier==='A'?`Tier ${C.tier} meta (giải đấu VN·TH·TW + rank VN·TH)`:null);
   LK.forEach(k=>{const e=st.enemy[k];if(!e)return;const w=k===lane?1.6:1;const m=matchup(C,BY[e]);m.r.forEach(([v,t])=>add(v*w,t))});
   const allies=LK.filter(k=>k!==lane&&st.ally[k]).map(k=>BY[st.ally[k]]);
-  allies.forEach(a=>{const v=SYN[C.id]?.[a.id];if(v)add(v*.25,`Kết hợp tốt với đồng đội ${N(a)}`)});
+  allies.forEach(a=>{const v=SYN[C.id]?.[a.id];if(v)add(v*.25,`Kết hợp tốt với đồng đội ${N(a)}`);
+    const c=CMB[C.id]?.[a.id];if(c){const wr=comboWR(c);if(wr>.52)add(Math.min(3,(wr-.5)*12*Math.min(1,c.n/15)),`Cặp bài pro với ${N(a)}: thắng ${c.w}/${c.n} ván ${flags(c.rg)}`);else if(wr<.42)add(-1,`Đi cùng ${N(a)} ở giải chỉ thắng ${c.w}/${c.n} ván`)}});
   if(allies.length){
     const mag=allies.filter(a=>has(a,'m')).length,phy=allies.length-mag;
     if(!allies.some(a=>has(a,'t'))&&has(C,'t')) add(1.5,'Đội đang thiếu người đỡ đòn — bạn gánh tuyến trước');
@@ -86,17 +94,18 @@ function tiers(list){
 function banList(){
   const u=used();const allies=LK.filter(k=>st.ally[k]).map(k=>BY[st.ally[k]]);
   return HEROES.filter(h=>!u.has(h.id)).map(E=>{
-    let s=E.meta*1.2;const r=[];if(E.meta)r.push([E.meta,E.meta>1?'Tướng hot meta, tỷ lệ cấm cao':'Đang mạnh trong meta']);
+    let s=E.meta*1.5;const r=[];if(E.tier==='S'||E.tier==='A'){const pr=presence(E.id);const vb=E.rank.vn?` · rank VN cấm ${E.rank.vn[2]}%`:'';r.push([E.meta,`Tier ${E.tier} meta${pr?' — giải đấu bị cấm '+Object.entries(pr).map(([k,v])=>RG[k]+' '+Math.round(v.b/GAMES[k]*100)+'%').join(' '):''}${vb}`])}
     allies.forEach(a=>{const m=matchup(E,a);if(m.s>0){s+=m.s*.6;const best=m.r.filter(x=>x[0]>0).sort((x,y)=>y[0]-x[0])[0];if(best)r.push([m.s,best[1]])}});
     const ens=LK.filter(k=>st.enemy[k]).map(k=>BY[st.enemy[k]]);
-    ens.forEach(e=>{const v=SYN[E.id]?.[e.id];if(v){s+=v*.2;r.push([v*.2,`Kết hợp mạnh với ${N(e)} bên đối thủ`])}});
+    ens.forEach(e=>{const v=SYN[E.id]?.[e.id];if(v){s+=v*.2;r.push([v*.2,`Kết hợp mạnh với ${N(e)} bên đối thủ`])}
+      const c=CMB[E.id]?.[e.id];if(c&&comboWR(c)>.55){const v2=(comboWR(c)-.5)*10;s+=v2;r.push([v2,`Cặp bài pro với ${N(e)} (đối thủ đã pick): thắng ${c.w}/${c.n} ván`])}});
     return {h:E,s,r};
   }).sort((a,b)=>b.s-a.s).slice(0,12);
 }
 
 /* ===== Trạng thái ===== */
 const blank=()=>({ally:{T:null,J:null,M:null,A:null,S:null},enemy:{T:null,J:null,M:null,A:null,S:null},bans:{ally:[null,null,null,null,null],enemy:[null,null,null,null,null]}});
-let st=Object.assign(blank(),{focus:'T',mode:'pick',target:null});
+let st=Object.assign(blank(),{focus:'T',mode:'pick',target:null,tierLane:'T'});
 let history=[];
 try{const s=JSON.parse(localStorage.getItem('bp-lq')||'null');if(s&&s.ally)Object.assign(st,s,{target:null})}catch(e){}
 const save=()=>{try{localStorage.setItem('bp-lq',JSON.stringify({ally:st.ally,enemy:st.enemy,bans:st.bans,focus:st.focus}))}catch(e){}};
@@ -172,6 +181,8 @@ function why(rs,n=3,neg){
 function renderCenter(){
   document.getElementById('tab-pick').classList.toggle('on',st.mode==='pick');
   document.getElementById('tab-ban').classList.toggle('on',st.mode==='ban');
+  document.getElementById('tab-tier').classList.toggle('on',st.mode==='tier');
+  if(st.mode==='tier'){renderTier();return}
   const lp=document.getElementById('lanepick'),el=document.getElementById('suggest');
   if(st.mode==='ban'){
     lp.innerHTML='';
@@ -194,7 +205,38 @@ function renderCenter(){
     ${tr.S.length?`<div class="top3">${tr.S.map(x=>bigCard(x,'pick','S')).join('')}</div>`:''}
     ${tr.A.length?`<div class="tierrow"><div class="tl" style="background:var(--A)">A</div><div class="chips">${tr.A.map(x=>chip(x,'pick')).join('')}</div></div>`:''}
     ${tr.B.length?`<div class="tierrow"><div class="tl" style="background:var(--B)">B</div><div class="chips">${tr.B.map(x=>chip(x,'pick')).join('')}</div></div>`:''}
+    ${comboHTML(lane,list)}
     ${avoid.length&&anyEnemy?`<div class="sec">⛔ Nên tránh pick ở đường này</div><div class="chips">${avoid.map(x=>chip(x,'none',true)).join('')}</div>`:''}`;
+}
+/* Cặp bài: tướng đường này + đồng đội (đã pick hoặc nên pick ở đường trống) */
+function comboHTML(lane,list){
+  const sc=Object.fromEntries(list.map(x=>[x.h.id,x.s]));const u=used();const out=[];
+  list.slice(0,25).forEach(x=>{const m=CMB[x.h.id];if(!m)return;
+    Object.entries(m).forEach(([pid,c])=>{if(c.n<8||comboWR(c)<.55)return;const P=BY[pid];if(!P)return;
+      const allyLane=LK.find(k=>st.ally[k]===pid);
+      if(allyLane){out.push({a:x.h,b:P,c,have:true,s:x.s+comboWR(c)*4});return}
+      if(u.has(pid))return;const fl=P.lanes.find(l=>l!==lane&&!st.ally[l]);if(!fl)return;
+      out.push({a:x.h,b:P,c,lane2:fl,s:x.s+comboWR(c)*3});});});
+  const seen=new Set(),per={};const top=out.sort((p,q)=>q.s-p.s).filter(o=>{const k=[o.a.id,o.b.id].sort().join();if(seen.has(k)||(per[o.a.id]||0)>=1)return false;seen.add(k);per[o.a.id]=(per[o.a.id]||0)+1;return true}).slice(0,4);
+  if(!top.length)return '';
+  return `<div class="sec">🤝 Cặp bài gợi ý (theo dữ liệu giải VN·TH·TW)</div><div class="combos">${top.map(o=>`
+    <div class="combo"><div class="pair"><div class="pic">${pic(o.a)}</div><span>+</span><div class="pic ${o.have?'have':''}">${pic(o.b)}</div></div>
+      <div class="cinfo"><div class="nm">${o.a.name} + ${o.b.name}</div>
+      <div class="w">${o.have?`${o.b.name} đã có trong đội`:`${o.b.name} đi đường ${LN[o.lane2]}`} · thắng <b>${o.c.w}/${o.c.n}</b> ván (${Math.round(o.c.w/o.c.n*100)}%) ${flags(o.c.rg)}</div></div>
+      <button class="pickbtn sm" data-act="pick" data-id="${o.a.id}">Chọn ${o.a.name}</button></div>`).join('')}</div>`;
+}
+function renderTier(){
+  document.getElementById('lanepick').innerHTML=LANES.map(([k,l,ic])=>`<button class="lp ${st.tierLane===k?'on':''}" data-tl="${k}">${ic} ${l}</button>`).join('');
+  const lane=st.tierLane||'T';
+  const list=HEROES.filter(h=>h.lanes[0]===lane||(h.lanes.includes(lane)&&PRO[h.id]));
+  const ord={S:0,A:1,B:2,C:3};list.sort((a,b)=>ord[a.tier]-ord[b.tier]||((PRO[b.id]||{}).score||0)-((PRO[a.id]||{}).score||0));
+  const g={S:[],A:[],B:[],C:[]};list.forEach(h=>g[h.tier].push(h));
+  document.getElementById('suggest').innerHTML=`<div class="shead"><h2>Tier meta — đường ${LN[lane]}</h2><span class="sub">Gộp 3 giải đấu (${REGIONS.map(r=>RG[r[0]]+' '+r[1]).join(' · ')}) + rank 🇻🇳 (tỉ lệ thắng/chọn/cấm) + rank 🇹🇭 (tier list rovmeta)</span></div>
+   ${Object.entries(g).filter(([,v])=>v.length).map(([t,v])=>`<div class="tierrow"><div class="tl" style="background:${{S:'var(--S)',A:'var(--A)',B:'var(--B)',C:'#5b6690'}[t]}">${t}</div><div class="chips">${v.map(h=>{const pr=presence(h.id);const rk=h.rank||{};
+     const proL=pr?Object.entries(pr).map(([r,v])=>`${RG[r]} ${v.pb}%`).join(' '):'Ít xuất hiện ở giải';
+     const rkL=[rk.vn?`🇻🇳 thắng ${rk.vn[0]}% · chọn ${rk.vn[1]}% · cấm ${rk.vn[2]}%`:'',rk.th?`🇹🇭 tier ${rk.th==='S'?'S+':rk.th}`:''].filter(Boolean).join('<br>');
+     return `<div class="chip"><div class="pic">${pic(h)}</div><div style="min-width:0"><div class="nm">${h.name}</div><div class="w2">🏆 Giải: ${proL}<br>⚔️ Rank: ${rkL||'—'}</div></div></div>`}).join('')}</div></div>`).join('')}
+   <div class="note">Cách đọc: "🏆 Giải: 🇻🇳 68%" = tướng xuất hiện (được pick hoặc bị cấm) ở 68% số ván của giải Việt Nam. "⚔️ Rank 🇻🇳" = tỉ lệ thắng / chọn / cấm ở đấu hạng Việt Nam. Đài Loan chưa có nguồn rank công khai nên chỉ tính dữ liệu giải.</div>`;
 }
 function bigCard(x,act,tier){
   const max=Math.max(6,x.s);const w=why(x.r,3);const neg=why(x.r,1,true);
@@ -221,10 +263,11 @@ function renderIntel(){
     const style=p.tank>=2?'Trâu, đánh tổng':p.ass>=2?'Bắt lẻ, ám sát':p.poke>=2?'Cấu rỉa từ xa':p.late>=2?'Chờ cuối trận':'Cân bằng';
     const tips=[];
     if(isEnemy){
-      if(p.phy>=3)tips.push('Đối thủ chủ yếu gây <b>sát thương vật lý</b> → ưu tiên đồ <b>giáp</b> (giảm sát thương vật lý).');
-      if(p.mag>=3)tips.push('Đối thủ chủ yếu gây <b>sát thương phép</b> → ưu tiên đồ <b>giáp phép</b> (giảm sát thương phép).');
-      if(p.heal>=2)tips.push(`Có ${p.heal} tướng hồi máu → nên có người lên <b>đồ giảm hồi máu</b> (khiến đối thủ hồi ít máu hơn) từ sớm.`);
-      if(p.cc>=2)tips.push(`Có ${p.cc} tướng khống chế chắc tay (choáng, kéo, áp chế) → xạ thủ/pháp sư nên mang phép bổ trợ <b>Thanh Tẩy</b> (giải khống chế).`);
+      if(p.phy>=3)tips.push('Đối thủ chủ yếu gây <b>sát thương vật lý</b> → ưu tiên đồ giáp: <b>Áo choàng băng giá</b>, <b>Khiên huyền thoại</b> (giảm tốc đánh xạ thủ địch).');
+      if(p.mag>=3)tips.push('Đối thủ chủ yếu gây <b>sát thương phép</b> → ưu tiên đồ giáp phép: <b>Huân chương Troy</b>, <b>Giáp Gaia</b>.');
+      if(p.heal>=2)tips.push(`Có ${p.heal} tướng hồi máu → nên có người lên đồ giảm hồi máu: <b>Sách Truy Hồn</b> (tướng phép) hoặc <b>Đao Truy Hồn</b> (tướng vật lý) — giảm 40% lượng máu đối thủ hồi lại.`);
+      if(p.cc>=2)tips.push(`Có ${p.cc} tướng khống chế chắc tay (choáng, kéo, áp chế) → xạ thủ/pháp sư nên mang phép bổ trợ <b>Thanh tẩy</b> (giải mọi khống chế).`);
+      T.forEach(h=>{const it=COUNTER_ITEMS[h.id];if(it)tips.push(`Đồ khắc chế <b>${h.name}</b>: ${it.map(x=>'<b>'+x+'</b>').join(', ')}.`)});
       if(p.ass>=2)tips.push(`Có ${p.ass} sát thủ → tướng máu mỏng đi theo trợ thủ, tránh đi lẻ chỗ không có tầm nhìn.`);
       if(p.tank>=2)tips.push(`Có ${p.tank} tướng đỡ đòn → cần tướng gây <b>sát thương chuẩn/theo % máu</b> (máu càng nhiều mất càng nhiều).`);
       if(p.late>=2)tips.push('Đối thủ mạnh cuối trận → nên đánh nhanh, lấy Rồng/Tà Thần sớm.');
@@ -253,6 +296,8 @@ function openModal(t){
   document.getElementById('mtitle').innerHTML=t.kind==='ban'?`${side} · Cấm tướng (ô ${t.idx+1})`:`${side} · Chọn tướng${t.lane?' đường '+LN[t.lane]:''}`;
   const filled=t.kind==='ban'?st.bans[t.side][t.idx]:(t.lane&&st[t.side][t.lane]);
   document.getElementById('mclear').hidden=!filled;
+  const sw=document.getElementById('mswap');
+  if(t.kind==='pick'&&t.lane&&filled){sw.hidden=false;sw.innerHTML='Chuyển tướng này sang đường: '+LANES.filter(l=>l[0]!==t.lane).map(([k,l,ic])=>`<button class="mt" data-swap="${k}">${ic} ${l}${st[t.side][k]?' (đổi chỗ với '+BY[st[t.side][k]].name+')':''}</button>`).join('')}else sw.hidden=true;
   document.getElementById('modal').hidden=false;renderTeams();renderBans();renderModal();
 }
 function closeModal(){document.getElementById('modal').hidden=true;st.target=null;render()}
@@ -266,7 +311,7 @@ function renderModal(){
     const rk=ranked(lane),tr=tiers(rk);['S','A','B'].forEach(k=>tr[k].forEach(x=>badge[x.h.id]=k));
     const sc=Object.fromEntries(rk.map(x=>[x.h.id,x.s]));
     list.sort((a,b)=>(sc[b.id]??-99)-(sc[a.id]??-99));
-    hint=`Tướng được sắp xếp theo mức độ khắc chế cho đường <b>${LN[lane]}</b> — nhãn S/A/B là tướng nên pick.`;
+    hint=`Xếp theo mức độ khắc chế cho đường <b>${LN[lane]}</b>. Nhãn trái (S/A/B) = nên pick ván này · chữ nhỏ góc phải = tier meta giải đấu.`;
   }else if(t.kind==='ban'&&t.side==='ally'){
     const bl=banList();bl.slice(0,6).forEach(x=>badge[x.h.id]='ban');const sc=Object.fromEntries(bl.map((x,i)=>[x.h.id,100-i]));
     list.sort((a,b)=>(sc[b.id]||0)-(sc[a.id]||0)||a.name.localeCompare(b.name,'vi'));
@@ -277,6 +322,7 @@ function renderModal(){
     const b=badge[h.id];
     return `<button class="hc ${u.has(h.id)?'off':''}" data-hero="${h.id}" title="${h.name} — ${h.lanes.map(l=>LN[l]).join(', ')}">
       ${b?`<span class="tb ${b==='ban'?'ban':''}" style="${b!=='ban'?'background:'+TC[b]:''}">${b==='ban'?'Cấm':b}</span>`:''}
+      ${h.tier&&h.tier!=='D'?`<span class="mtier t${h.tier}" title="Tier meta giải đấu">${h.tier}</span>`:''}
       <div class="pic">${pic(h)}</div><div class="n">${h.name}</div></button>`}).join('')||'<div class="empty">Không tìm thấy tướng</div>';
 }
 const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/gi,'d').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -288,6 +334,8 @@ document.addEventListener('click',e=>{
   if(x=g('[data-ban]')){const [side,i]=x.dataset.ban.split(':');openModal({kind:'ban',side,idx:+i});return}
   if(x=g('[data-hero]')){place(x.dataset.hero,M.t);return}
   if(x=g('[data-mt]')){M.tab=x.dataset.mt;renderModal();return}
+  if(x=g('[data-swap]')){snap();const t=M.t,to=x.dataset.swap,tmp=st[t.side][to];st[t.side][to]=st[t.side][t.lane];st[t.side][t.lane]=tmp;save();closeModal();return}
+  if(x=g('[data-tl]')){st.tierLane=x.dataset.tl;render();return}
   if(x=g('[data-focus]')){st.focus=x.dataset.focus;save();render();return}
   if(x=g('[data-mode]')){st.mode=x.dataset.mode;render();return}
   if(x=g('[data-act]')){
