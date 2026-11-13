@@ -34,49 +34,122 @@ const flags=rg=>rg.match(/../g).map(r=>RG[r]).join('');
 const isSquishy=h=>!has(h,'t')&&(h.lanes[0]==='A'||h.lanes[0]==='M');
 const N=h=>`<b>${h.name}</b>`;
 
-/* ===== So kèo 1 tướng (C) với 1 tướng (E) ===== */
-/* Tên chiêu: "Chiêu 2 – Lôi động" */
+/* Tên chiêu (dữ liệu Garena): "Chiêu 2 – Lôi động" */
 const SKL=(h,k)=>h.sk&&h.sk[k]?`<b>${(h.sk[k][0]+' '+h.sk[k][1]).trim()}</b>`:null;
 const EFF=(h,k)=>h.sk&&h.sk[k]?h.sk[k][2]:'';
 const PV={};PROVS.forEach(([a,b,n,w])=>{(PV[a]=PV[a]||{})[b]={n,w}});
-function weakHint(C,E){
-  if(!has(E,'d')&&!has(E,'u')) return `${E.name} ít chiêu thoát thân, ${has(C,'c')?'dính '+(SKL(C,'cc')||'khống chế')+' là khó chạy':'dễ bị bắt lẻ'}`;
-  if(!has(E,'r')&&has(C,'r')) return `đánh xa, cấu máu ${E.name} trước khi hắn áp sát được`;
-  if(has(E,'t')&&has(C,'l')) return `về cuối trận đủ đồ, sát thương liên tục bào tan lớp giáp của ${E.name}`;
-  if(has(C,'d')) return `cơ động hơn — dùng ${SKL(C,'dash')||'chiêu lướt'} né chiêu chính của ${E.name} rồi phản đòn`;
-  return `bộ chiêu ăn đứt ${E.name} khi đánh tay đôi`;
+/* ===== So kèo C (tướng mình) với E (tướng đối thủ) — dựa trên hồ sơ tướng (pf) viết từ toàn bộ kỹ năng/nội tại =====
+   pf.s = điểm mạnh {tag: "Chiêu N Tên (hiệu ứng)"} · pf.w = điểm yếu · pf.p = giai đoạn mạnh (e/m/l) */
+const PF=h=>h.pf||{s:{},w:[],p:'m',a:''};
+const hasS=(h,t)=>t in PF(h).s, hasW=(h,t)=>PF(h).w.includes(t);
+const fmt=s=>{const m=s.match(/^(.+?)( \(.+\))?$/);return `<b>${m[1]}</b>${m[2]||''}`};
+const firstS=(h,tags)=>{for(const t of tags)if(hasS(h,t))return t;return null};
+const SK=(h,tags)=>{const t=firstS(h,tags);return t?fmt(PF(h).s[t]):null};
+const SKN=(h,tags)=>{const t=firstS(h,tags);return t?`<b>${PF(h).s[t].replace(/ \(.+\)$/,'')}</b>`:null};
+const CC=['ccp','ccs','cca'];
+/* Luật 1: điểm mạnh của C đánh đúng điểm yếu của E */
+const WR=[
+ ['tru','w_tank',['tru'],2.4,(sk,n)=>`${sk} — ${n} càng lên đồ trâu càng mất nhiều máu`],
+ ['sil','w_sil',['sil'],2.2,(sk,n)=>`${sk} khóa chiêu của ${n} — mất chiêu là gần như vô hại`],
+ ['cha','w_cha',['ccp','sil','ccs','cca'],1.8,(sk,n,E)=>`${n} phải đứng yên khi ${E&&SKL(E,'chan')?'tung '+SKL(E,'chan'):'vận chiêu'} — dùng ${sk} ngắt ngay`],
+ ['ccp','w_cc',['ccp'],2.0,(sk,n)=>`${sk} khóa thẳng ${n} — không có chiêu giải khống, dính là khó thoát`],
+ ['cc','w_cc',['ccs','cca'],1.3,(sk,n)=>`Chờ ${n} dùng hết chiêu lướt rồi tung ${sk} — không có giải khống, dính là chết`],
+ ['dodge','w_mob',['mob','unt','inv'],1.4,(sk,n)=>`${n} khó bắt được tướng cơ động — dùng ${sk} né chiêu rồi phản đòn`],
+ ['bur','w_bur',['bur'],1.8,(sk,n)=>`${sk} dồn chết ${n} trong một combo — máu mỏng không trụ nổi`],
+ ['dive','w_dive',['mob','dash','eng'],1.4,(sk,n)=>`Dùng ${sk} áp sát ${n} — tướng tay dài bị lao vào mặt là mất tác dụng`],
+ ['ahl','w_heal',['ahl'],2.0,(sk,n)=>`${sk} cắt hồi máu của ${n}`],
+ ['hbur','w_heal',['bur','tru'],1.0,(sk,n)=>`Dồn ${sk} hạ ${n} trong 1 nhịp, không cho kịp hồi máu (lên thêm Sách/Đao Truy Hồn)`],
+ ['kite','w_kite',['pok','rng'],1.5,(sk,n)=>`${n} phải áp sát mới đánh được — giữ khoảng cách, dùng ${sk} bào máu`],
+ ['kpel','w_kite',['pel'],1.2,(sk,n)=>`${sk} đẩy ${n} ra mỗi lần lao vào`],
+];
+/* Luật 2: điểm mạnh của C vô hiệu hóa điểm mạnh của E (phòng thủ phản công) */
+const NR=[
+ ['imm',['ccp','ccs','cca','sil'],['imm'],1.3,(sk,n,es)=>`${sk} — miễn nhiễm ${es||'khống chế'} của ${n}`],
+ ['unt',['bur'],['unt','inv'],1.0,(sk,n,es)=>`${sk} né trọn ${es||'combo dồn sát thương'} của ${n}`],
+ ['tank',['bur'],['shd','tnk'],.8,(sk,n,es)=>`${sk} chịu được ${es||'combo'} của ${n}, phản đòn khi hết chiêu`],
+ ['sus',['pok'],['heal','sup'],.6,(sk,n)=>`${sk} hồi lại lượng máu bị ${n} cấu rỉa`],
+ ['peng',['eng','mob'],['pel','zon','ccs','cca'],.9,(sk,n,es)=>`Phản công: chờ ${n} dùng ${es||'chiêu lao vào'} rồi tung ${sk}`],
+ ['uwait',['unt'],['ccp','ccs','cca'],.8,(sk,n,es)=>`${n} có ${es||'chiêu né đòn'} — giữ ${sk}, tung ngay khi hiệu ứng vừa hết`],
+ ['inv',['inv'],['rev'],1.2,(sk,n)=>`${sk} bắt được ${n} khi đang tàng hình`],
+ ['rev',['unt','mob'],['rev'],.9,(sk,n,es)=>`${sk} — ${n} hết đường lẩn trốn dù có ${es||'chiêu thoát'}`],
+ ['ptl',['mob'],['ccp'],1,(sk,n,es)=>`${sk} là khống chế chỉ định — ${es||'chiêu lướt'} của ${n} không né được`],
+];
+function edges(C,E){ // các lợi thế C có trước E
+  const o=[];
+  WR.forEach(([k,w,cs,v,fn])=>{if(!hasW(E,w))return;const t=firstS(C,cs);if(!t)return;o.push({k,v,sk:fmt(PF(C).s[t]),fn,E})});
+  NR.forEach(([k,es,cs,v,fn])=>{const et=firstS(E,es);if(!et)return;const t=firstS(C,cs);if(!t)return;o.push({k,v,sk:fmt(PF(C).s[t]),es:SKN(E,[et]),fn,E})});
+  if(hasW(E,'w_early')&&PF(C).p==='e')o.push({k:'early',v:1.2,fn:(sk,n)=>`Mạnh đầu trận — ép ${n} trước phút 8 khi chưa đủ đồ`});
+  if(hasW(E,'w_late')&&PF(C).p==='l')o.push({k:'late',v:1,fn:(sk,n)=>`Về cuối trận vượt trội ${n}`});
+  const seen=new Set();return o.sort((a,b)=>b.v-a.v).filter(x=>{const key=x.sk||x.k;if(seen.has(key))return false;seen.add(key);return true});
 }
-/* ===== So kèo C (tướng mình) với E (tướng đối thủ) — lý do viết theo chiêu thức ===== */
+const DIM=[1,.6,.35,.2,.1];
 function matchup(C,E){
-  const r=[];let s=0;let mech=0;const add=(v,t,m,key,sh)=>{s+=v;if(t)r.push([v,t,key,sh,E.name]);if(m)mech++};
-  const n=N(E);
-  if(has(E,'b')){
-    if(has(C,'q')) add(2,`Giữ ${SKL(C,'cc')} (${EFF(C,'cc')}) — chờ ${n} dùng ${SKL(E,'dash')||'chiêu lướt'} lao vào rồi mới tung, khóa cứng là hạ được`,1,'cc',ns=>`Giữ ${SKL(C,'cc')} (${EFF(C,'cc')}) — chờ ${ns} lao vào rồi mới tung, khóa cứng là hạ được`);
-    else if(has(C,'c')) add(.8,`Có ${SKL(C,'cc')||'khống chế'} để giữ chân ${n} khi hắn lao vào`,1,'cc2',ns=>`Có ${SKL(C,'cc')||'khống chế'} để giữ chân ${ns} khi lao vào`);
-  }
-  if(has(E,'t')&&has(C,'x')) add(2.5,`${SKL(C,'tru')||'Đòn đánh'} gây ${EFF(C,'tru')||'sát thương chuẩn'} — ${n} càng lên đồ trâu càng mất nhiều máu`,1,'tru',ns=>`${SKL(C,'tru')||'Đòn đánh'} gây ${EFF(C,'tru')||'sát thương chuẩn'} — xé ${ns} dù lên đồ trâu`);
-  if(isSquishy(E)&&!has(E,'d')&&has(C,'b')) add(2,`Dùng ${SKL(C,'dash')||'chiêu áp sát'} vào thẳng ${n}, dồn trọn combo trong 1 nhịp — ${E.name} không có chiêu lướt để thoát`,1,'burst',ns=>`Dùng ${SKL(C,'dash')||'chiêu áp sát'} vào thẳng ${ns}, dồn trọn combo trong 1 nhịp — không có chiêu lướt để thoát`);
-  if(has(E,'p')&&(has(C,'g')||(has(C,'d')&&has(C,'b')))) add(1.2,`Đừng đứng xa chịu cấu rỉa của ${n}: đi vòng qua bụi rồi dùng ${SKL(C,'dash')||SKL(C,'cc')||'chiêu áp sát'} lao thẳng vào`,1,'poke',ns=>`Đừng đứng xa chịu cấu rỉa của ${ns}: đi vòng qua bụi rồi dùng ${SKL(C,'dash')||SKL(C,'cc')||'chiêu áp sát'} lao thẳng vào`);
-  if(has(E,'s')&&(has(C,'x')||has(C,'b'))) add(.7,`${n} hồi máu nhờ ${SKL(E,'heal')||'nội tại'} — dồn sát thương dứt điểm 1 lần, lên thêm Sách/Đao Truy Hồn (giảm 40% hồi máu)`,1,'heal',ns=>`${ns} hồi máu nhiều — dồn sát thương dứt điểm 1 lần, lên thêm Sách/Đao Truy Hồn (giảm 40% hồi máu)`);
-  if((has(E,'u')||has(E,'i'))&&has(C,'q')) add(1,`${SKL(E,'unt')||SKL(E,'inv')||'Chiêu né đòn'} giúp ${n} tránh sát thương — giữ ${SKL(C,'cc')} tung ngay khi hiệu ứng vừa hết`,1,'unt',ns=>`${ns} có chiêu né đòn — giữ ${SKL(C,'cc')} tung ngay khi hiệu ứng vừa hết`);
-  if(has(E,'q')&&has(C,'w')) add(has(E,'g')||has(E,'b')?1:.6,C.sk&&C.sk.imm?`${SKL(C,'imm')} giúp miễn khống chế — bật trước khi ${n} tung ${SKL(E,'cc')||'chiêu khống chế'} là vô hiệu hóa được`:`Có nội tại/chiêu miễn khống chế — không sợ ${SKL(E,'cc')||'khống chế'} của ${n}`,1,'imm',ns=>C.sk&&C.sk.imm?`${SKL(C,'imm')} giúp miễn khống chế — bật trước khi ${ns} tung chiêu khống chế`:`Có nội tại/chiêu miễn khống chế — không sợ khống chế của ${ns}`);
-  if(has(E,'n')&&has(C,'c')) add(1.5,`${n} phải đứng yên khi tung ${SKL(E,'chan')||'chiêu vận'} — dùng ${SKL(C,'cc')||'khống chế'} ngắt ngay`,1,'chan',ns=>`${ns} phải đứng yên khi vận chiêu — dùng ${SKL(C,'cc')||'khống chế'} ngắt ngay`);
-  if(has(E,'b')&&(has(C,'t')||has(C,'h'))) add(.8,`Đủ trâu${C.sk&&C.sk.shield?' + '+SKL(C,'shield'):''} để chịu combo của ${n}, phản đòn khi hắn hết chiêu`,1,'tank',ns=>`Đủ trâu${C.sk&&C.sk.shield?' + '+SKL(C,'shield'):''} để chịu combo của ${ns}, phản đòn khi hết chiêu`);
-  if(has(E,'k')&&has(C,'g')) add(.8,`${n} hay thả diều — nấp bụi rồi mở giao tranh bằng ${SKL(C,'cc')||SKL(C,'dash')||'chiêu mở combat'}`,1,'kite',ns=>`${ns} hay thả diều — nấp bụi rồi mở giao tranh bằng ${SKL(C,'cc')||SKL(C,'dash')||'chiêu mở combat'}`);
-  if(has(E,'l')&&has(C,'e')) add(.8,`Mạnh đầu trận hơn ${n}: ép lính, cướp bùa, gank trước phút 8 khi hắn chưa đủ đồ`,1,'early',ns=>`Mạnh đầu trận hơn ${ns}: ép lính, cướp bùa, gank trước phút 8 khi đối thủ chưa đủ đồ`);
-  // Bằng chứng dữ liệu: bảng kèo (VN + cộng đồng), đối đầu trực tiếp ở giải
+  const r=[];let s=0;const n=N(E);
+  const pos=edges(C,E),neg=edges(E,C);
+  pos.forEach((x,i)=>{const v=x.v*(DIM[i]||0);s+=v;if(i<3)r.push([v,x.fn(x.sk,n,x.es,E),x.k+'|'+(x.sk||''),ns=>x.fn(x.sk,ns,null,null),E.name])});
+  neg.forEach((x,i)=>{const v=-.8*x.v*(DIM[i]||0);s+=v;if(i<2)r.push([v,x.sk?`Dễ bị ${n} khắc chế bằng ${x.sk}`:`${n} ${x.k==='early'?'mạnh đầu trận hơn':'mạnh cuối trận hơn'}`])});
+  // Bằng chứng dữ liệu: bảng kèo VN, đối đầu trực tiếp ở giải
   const cs=CNT[C.id]?.[E.id], es=CNT[E.id]?.[C.id], pv=PV[C.id]?.[E.id];
-  const pvTxt=pv&&pv.w/pv.n>=.55?` · ở giải ${C.name} gặp ${E.name} thắng ${pv.w}/${pv.n} ván`:'';
-  if(cs) add(cs*.4,mech?null:`Khắc chế ${n}: ${weakHint(C,E)}${pvTxt}`);
-  if(KNOWN[C.id]?.includes(E.id)&&!cs) add(2.5,mech?null:`Khắc chế ${n}: ${weakHint(C,E)}`);
-  if(pv&&pv.n>=5){const wr=(pv.w+2)/(pv.n+4);if(wr>.6)add((wr-.5)*8,(mech||cs)?null:`Ở giải ${C.name} gặp ${n} thắng ${pv.w}/${pv.n} ván`);else if(wr<.4)add((wr-.5)*8,`Ở giải ${C.name} gặp ${n} chỉ thắng ${pv.w}/${pv.n} ván`)}
-  if(es) add(-es*.4,`Bị ${n} khắc chế${has(E,'q')&&!has(C,'w')?' — dễ dính '+(SKL(E,'cc')||'khống chế'):''}`);
-  if(KNOWN[E.id]?.includes(C.id)&&!es) add(-2.5,`Bị ${n} khắc chế`);
-  if(isSquishy(C)&&has(E,'b')) add(-1.2,`Máu mỏng, dễ bị ${n} dùng ${SKL(E,'dash')||'chiêu lướt'} lao vào ám sát`);
-  if(has(C,'t')&&has(E,'x')) add(-1.5,`${SKL(E,'tru')||'Sát thương chuẩn'} của ${n} xé tank rất đau`);
-  if(has(C,'n')&&has(E,'q')) add(-1.2,`${SKL(C,'chan')||'Chiêu vận'} dễ bị ${n} ngắt bằng ${SKL(E,'cc')||'khống chế'}`);
-  if(has(C,'b')&&!has(C,'w')&&has(E,'q')) add(-.6,`Lao vào dễ dính ${SKL(E,'cc')||'khống chế'} của ${n}`);
+  const mech=pos.length>0;
+  const pvTxt=pv&&pv.w/pv.n>=.55?` · ở giải thắng ${pv.w}/${pv.n} ván`:'';
+  if(cs) s+=cs*.35, mech||r.push([cs*.35,`Khắc chế ${n}: ${PF(C).a.toLowerCase()}${pvTxt}`]);
+  if(KNOWN[C.id]?.includes(E.id)&&!cs){s+=2;mech||r.push([2,`Khắc chế ${n}: ${PF(C).a.toLowerCase()}`])}
+  if(pv&&pv.n>=5){const wr=(pv.w+2)/(pv.n+4);if(wr>.6){const v=(wr-.5)*8;s+=v;if(mech)r.push([v*.5,`Ở giải ${C.name} gặp ${n} thắng ${pv.w}/${pv.n} ván`])}else if(wr<.4){const v=(wr-.5)*8;s+=v;r.push([v,`Ở giải ${C.name} gặp ${n} chỉ thắng ${pv.w}/${pv.n} ván`])}}
+  if(es){s-=es*.35;r.push([-es*.35,`Bị ${n} khắc chế`])}
+  if(KNOWN[E.id]?.includes(C.id)&&!es){s-=2;r.push([-2,`Bị ${n} khắc chế`])}
   return {s,r};
+}
+
+/* ===== Lối đánh đội hình (archetype) ===== */
+const ARCH={
+ push:{n:'Đẩy trụ nhanh',ic:'🏰',w:{psh:1.5,clr:1,pok:.4,rng:.3}},
+ dive:{n:'Lao vào bắt chủ lực',ic:'🗡️',w:{eng:1,mob:.8,dash:.4,bur:1,imm:.3}},
+ poke:{n:'Cấu rỉa từ xa',ic:'🎯',w:{pok:1.2,rng:1,zon:.5,clr:.3}},
+ fight:{n:'Giao tranh tổng',ic:'💥',w:{cca:1.3,zon:.8,eng:.6,tnk:.5,sup:.3}},
+ protect:{n:'Bảo kê chủ lực',ic:'🛡️',w:{sup:1.2,shd:.6,pel:1,glb:.4}},
+ split:{n:'Chia đường, đi lẻ',ic:'🔀',w:{spl:1.5,mob:.3,glb:.3}},
+ counter:{n:'Phòng thủ phản công',ic:'🔄',w:{pel:1,zon:.8,ccp:.6,ccs:.4,clr:.6,imm:.2}},
+ pick:{n:'Bắt lẻ',ic:'🪤',w:{ccp:1,rev:1,glb:.8,mob:.5,inv:.8}},
+};
+/* lối đánh nào khắc lối nào */
+const BEATS={dive:['poke','split'],counter:['dive','fight'],poke:['counter','fight','protect'],fight:['split','pick'],protect:['dive','pick'],push:['protect','split','counter'],split:['fight'],pick:['poke','push']};
+const contrib=(h,a)=>{let v=Object.entries(ARCH[a].w).reduce((s,[t,v])=>s+(hasS(h,t)?v:0),0);
+  if(a==='protect'&&PF(h).p==='l'&&hasS(h,'dps'))v+=1;
+  if(a==='dive'&&hasS(h,'bur')&&!hasS(h,'mob')&&!hasS(h,'dash')&&!hasS(h,'eng'))v-=1; // dồn sát thương nhưng không áp sát được thì không phải lối lao vào
+  return v};
+function archOf(T){const o={};Object.keys(ARCH).forEach(a=>o[a]=T.reduce((s,h)=>s+contrib(h,a),0));
+  if(!T.some(h=>PF(h).p==='l'&&hasS(h,'dps')))o.protect*=.5;
+  return Object.entries(o).sort((x,y)=>y[1]-x[1])}
+const keyH=(T,a,n=3)=>T.filter(h=>Object.entries(ARCH[a].w).some(([t,v])=>v>=.8&&hasS(h,t))).map(h=>[h,contrib(h,a)]).filter(x=>x[1]>=.8).sort((x,y)=>y[1]-x[1]).slice(0,n).map(x=>x[0]);
+const bestTag=(h,a)=>{const t=Object.entries(ARCH[a].w).sort((x,y)=>y[1]-x[1]).map(x=>x[0]).find(t=>hasS(h,t));return t?SKN(h,[t]):''};
+function planText(a,T){
+  const k=keyH(T,a),nm=k.map(h=>`<b>${h.name}</b>`).join(', ')||'cả đội';const sk=h=>h?bestTag(h,a):'';
+  switch(a){
+   case 'push':return `Gom lính đẩy liên tục, phá trụ ngoài trước phút 8. ${nm} dẫn lính vào trụ, không cần giao tranh — ép đối thủ phải ra thủ, rừng tranh thủ lấy Rồng/Tà Thần lúc đó.`;
+   case 'dive':return `${nm} vào cùng một lúc (${k.map(sk).filter(Boolean).slice(0,2).join(' → ')}), nhắm thẳng xạ thủ/pháp sư địch. Chờ đối thủ dùng phép bổ trợ/chiêu thoát rồi mới lao.`;
+   case 'poke':return `Bào máu trước mỗi mục tiêu lớn bằng ${k.map(sk).filter(Boolean).slice(0,3).join(', ')}; chỉ giao tranh khi địch đã mất 30–40% máu. Không để đối thủ áp sát.`;
+   case 'fight':return `Đánh tổng ở khe hẹp/cửa rừng, nối ${k.map(sk).filter(Boolean).slice(0,3).join(' → ')} lên cụm đối thủ. Đi 5 người cùng nhau, tránh bị bắt lẻ trước combat.`;
+   case 'protect':{const c=T.find(h=>PF(h).p==='l'&&hasS(h,'dps'));return `Cả đội xoay quanh <b>${c?c.name:'chủ lực'}</b>; ${nm} giữ ${k.map(sk).filter(Boolean).slice(0,2).join(', ')} để chặn sát thủ. Kéo trận về cuối, chỉ đánh khi chủ lực đủ 3 món.`}
+   case 'split':return `${nm} đi lẻ một đường biên, 4 người còn lại giữ thế ở đường đối diện, không giao tranh 4v5. Đối thủ cử người đi chặn thì đội đánh mục tiêu bên kia.`;
+   case 'counter':return `Không chủ động lao vào. Đứng sau trụ/sau tầm nhìn, chờ đối thủ mở combat rồi dùng ${k.map(sk).filter(Boolean).slice(0,3).join(', ')} phản công. Thắng giao tranh là lập tức đẩy trụ hoặc lấy Rồng.`;
+   case 'pick':return `Cắm mắt sâu rừng địch; ${nm} (${k.map(sk).filter(Boolean).slice(0,2).join(', ')}) bắt người đi lẻ, hơn người rồi mới đánh mục tiêu.`;
+  }
+}
+/* Cặp bài theo chất tướng */
+function pairSyn(a,b){
+  const R=[];const t=(x,y,v,lb,fn)=>{if(x&&y)R.push({v,lb,t:fn(x,y)})};
+  const one=(A,B)=>{
+    t(SKN(A,['eng','ccp','cca']),SKN(B,['bur','zon']),1.4,'Mở giao tranh',(x,y)=>`${A.name} mở bằng ${x} → ${B.name} dồn ${y}`);
+    t(SKN(A,['cca']),SKN(B,['zon','cca']),1,'Giao tranh tổng',(x,y)=>`Combo diện rộng: ${x} + ${y}`);
+    if(PF(B).p==='l'&&hasS(B,'dps')&&(A.lanes[0]==='S'||hasS(A,'sup')||hasS(A,'tnk')))t(SKN(A,['sup','shd','pel']),SKN(B,['dps']),1.3,'Bảo kê',(x,y)=>`${A.name} bảo kê bằng ${x} để ${B.name} xả ${y}`);
+    t(SKN(A,['psh']),SKN(B,['psh','clr']),1.2,'Đẩy trụ',()=>`Cặp đẩy trụ: ${A.name} + ${B.name} dọn lính, phá trụ rất nhanh — ép đối thủ phải ra thủ`);
+    t(SKN(A,['glb']),SKN(B,['mob','bur','spl']),1,'Hỗ trợ toàn bản đồ',(x,y)=>`${A.name} dùng ${x} hỗ trợ ${B.name} từ khắp bản đồ`);
+    t(SKN(A,['rev']),SKN(B,['bur']),1,'Bắt lẻ',(x,y)=>`${A.name} lộ diện bằng ${x}, ${B.name} lao vào dứt điểm bằng ${y}`);
+    t(SKN(A,['ccp']),SKN(B,['tru','bur']),.8,'Bắt lẻ',(x,y)=>`${x} của ${A.name} giữ mục tiêu cho ${B.name} tung ${y}`);
+    t(SKN(A,['pel','zon']),SKN(B,['pel','zon','ccp']),.6,'Phòng thủ phản công',(x,y)=>`${x} + ${y} chặn mọi pha lao vào, rồi phản công`);
+  };
+  one(a,b);one(b,a);
+  R.sort((x,y)=>y.v-x.v);return R[0]?{v:R[0].v+(R[1]?R[1].v*.3:0),t:R[0].t,lb:R[0].lb}:null;
 }
 
 /* ===== Chấm điểm 1 tướng cho 1 đường của đội bạn ===== */
@@ -86,11 +159,23 @@ function rate(C,lane){
   add(C.meta*.7,null);
   const grp={};
   LK.forEach(k=>{const e=st.enemy[k];if(!e)return;const w=k===lane?1.6:1;const m=matchup(C,BY[e]);s+=m.s*w;
-    m.r.forEach(([v,t,key,sh,en])=>{if(key&&v>0){const g=grp[key]=grp[key]||{v:0,t,sh,ns:[]};g.v+=v*w;g.ns.push('<b>'+en+'</b>');}else r.push([v*w,t])})});
-  Object.values(grp).forEach(g=>r.push([g.v,g.ns.length>1?g.sh(g.ns.join(' / ')):g.t]));
+    m.r.forEach(([v,t,key,sh,en])=>{if(key&&v>0){const g=grp[key]=grp[key]||{v:0,mx:0,t,sh,ns:[]};g.v+=v*w;g.mx=Math.max(g.mx,v*w);g.ns.push('<b>'+en+'</b>');}else r.push([v*w,t])})});
+  /* cùng một lợi thế đánh nhiều tướng: tính giảm dần để tướng 1 chiêu mạnh không lấn át */
+  Object.values(grp).forEach(g=>{const cap=g.mx*1.7;if(g.v>cap){s-=g.v-cap;g.v=cap}r.push([g.v,g.ns.length>1?g.sh(g.ns.join(' / ')):g.t])});
   const allies=LK.filter(k=>k!==lane&&st.ally[k]).map(k=>BY[st.ally[k]]);
   allies.forEach(a=>{const v=SYN[C.id]?.[a.id];if(v)add(v*.25,`Phối hợp tốt với ${N(a)}${has(a,'q')&&has(C,'b')?': nối '+SKL(a,'cc')+' của '+a.name+' với combo dồn sát thương':has(C,'q')&&(has(a,'b')||isSquishy(a))?': '+SKL(C,'cc')+' giữ mục tiêu cho '+a.name+' dồn sát thương':''}`);
     const c=CMB[C.id]?.[a.id];if(c){const wr=comboWR(c);if(wr>.52)add(Math.min(3,(wr-.5)*12*Math.min(1,c.n/15)),`Cặp bài pro với ${N(a)}: thắng ${c.w}/${c.n} ván ${flags(c.rg)}`);else if(wr<.42)add(-1,`Đi cùng ${N(a)} ở giải chỉ thắng ${c.w}/${c.n} ván`)}});
+  allies.forEach(a=>{if(SYN[C.id]?.[a.id]||CMB[C.id]?.[a.id])return;const ps=pairSyn(C,a);if(ps&&ps.v>=1)add(ps.v*.45,`Cặp bài với ${N(a)}: ${ps.t}`)});
+  const ens=LK.filter(k=>st.enemy[k]).map(k=>BY[st.enemy[k]]);
+  if(allies.length>=2){
+    const top=archOf(allies)[0][0],c=contrib(C,top);
+    if(c>=1)add(Math.min(1.5,c*.5),`Hoàn thiện lối <b>${ARCH[top].n}</b> của đội: ${bestTag(C,top)}`);
+  }
+  if(ens.length>=2){
+    const ea=archOf(ens)[0][0];
+    const best=Object.keys(BEATS).filter(a=>BEATS[a].includes(ea)).map(a=>[a,contrib(C,a)]).sort((x,y)=>y[1]-x[1])[0];
+    if(best&&best[1]>=1.2)add(Math.min(1.2,best[1]*.35),`Đối thủ chơi <b>${ARCH[ea].n}</b> — ${C.name} giúp đội đánh <b>${ARCH[best[0]].n}</b> (khắc lối đó) nhờ ${bestTag(C,best[0])}`);
+  }
   if(allies.length){
     const mag=allies.filter(a=>has(a,'m')).length,phy=allies.length-mag;
     if(!allies.some(a=>has(a,'t'))&&has(C,'t')) add(1.5,'Đội đang thiếu người đỡ đòn — bạn gánh tuyến trước');
@@ -231,21 +316,26 @@ function renderCenter(){
     ${comboHTML(lane,list)}
     ${avoid.length&&anyEnemy?`<div class="sec">⛔ Nên tránh pick ở đường này</div><div class="chips">${avoid.map(x=>chip(x,'none',true)).join('')}</div>`:''}`;
 }
-/* Cặp bài: tướng đường này + đồng đội (đã pick hoặc nên pick ở đường trống) */
+/* Cặp bài: tướng đường này + đồng đội (đã pick hoặc nên pick ở đường trống) — theo chất tướng + dữ liệu giải */
 function comboHTML(lane,list){
-  const sc=Object.fromEntries(list.map(x=>[x.h.id,x.s]));const u=used();const out=[];
-  list.slice(0,25).forEach(x=>{const m=CMB[x.h.id];if(!m)return;
-    Object.entries(m).forEach(([pid,c])=>{if(c.n<8||comboWR(c)<.55)return;const P=BY[pid];if(!P)return;
-      const allyLane=LK.find(k=>st.ally[k]===pid);
-      if(allyLane){out.push({a:x.h,b:P,c,have:true,s:x.s+comboWR(c)*4});return}
-      if(u.has(pid))return;const fl=P.lanes.find(l=>l!==lane&&!st.ally[l]);if(!fl)return;
-      out.push({a:x.h,b:P,c,lane2:fl,s:x.s+comboWR(c)*3});});});
-  const seen=new Set(),per={};const top=out.sort((p,q)=>q.s-p.s).filter(o=>{const k=[o.a.id,o.b.id].sort().join();if(seen.has(k)||(per[o.a.id]||0)>=1)return false;seen.add(k);per[o.a.id]=(per[o.a.id]||0)+1;return true}).slice(0,4);
+  const u=used();const out=[];
+  const partners=[];
+  LK.forEach(k=>{if(k===lane)return;if(st.ally[k])partners.push({h:BY[st.ally[k]],have:true,lane:k,s:0});
+    else ranked(k).slice(0,6).forEach(x=>partners.push({h:x.h,lane:k,s:x.s}))});
+  list.slice(0,10).forEach(x=>partners.forEach(p=>{if(p.h.id===x.h.id)return;
+    const ps=pairSyn(x.h,p.h),c=CMB[x.h.id]?.[p.h.id];
+    const pro=c&&c.n>=6&&comboWR(c)>=.55;
+    if(!(ps&&ps.v>=1)&&!pro)return;
+    const sc=x.s+p.s*.3+(ps?ps.v*1.5:0)+(pro?(comboWR(c)-.5)*20*Math.min(1,c.n/15):0)+(p.have?1:0);
+    out.push({a:x.h,b:p.h,ps,c:pro?c:null,have:p.have,lane2:p.lane,s:sc})}));
+  const seen=new Set(),per={},perB={};
+  const top=out.sort((p,q)=>q.s-p.s).filter(o=>{const k=[o.a.id,o.b.id].sort().join();if(seen.has(k)||(per[o.a.id]||0)>=1||(perB[o.b.id]||0)>=2)return false;seen.add(k);per[o.a.id]=1;perB[o.b.id]=(perB[o.b.id]||0)+1;return true}).slice(0,5);
   if(!top.length)return '';
-  return `<div class="sec">🤝 Cặp bài gợi ý (theo dữ liệu giải VN·TH·TW)</div><div class="combos">${top.map(o=>`
+  return `<div class="sec">🤝 Cặp bài gợi ý</div><div class="combos">${top.map(o=>`
     <div class="combo"><div class="pair"><div class="pic">${pic(o.a)}</div><span>+</span><div class="pic ${o.have?'have':''}">${pic(o.b)}</div></div>
-      <div class="cinfo"><div class="nm">${o.a.name} + ${o.b.name}</div>
-      <div class="w">${o.have?`${o.b.name} đã có trong đội`:`${o.b.name} đi đường ${LN[o.lane2]}`} · thắng <b>${o.c.w}/${o.c.n}</b> ván (${Math.round(o.c.w/o.c.n*100)}%) ${flags(o.c.rg)}</div></div>
+      <div class="cinfo"><div class="nm">${o.a.name} + ${o.b.name} ${o.ps?`<span class="lb">${o.ps.lb}</span>`:''}</div>
+      ${o.ps?`<div class="w">${o.ps.t}</div>`:''}
+      <div class="w">${o.have?`${o.b.name} đã có trong đội`:`${o.b.name} đi đường ${LN[o.lane2]}`}${o.c?` · giải đấu thắng <b>${o.c.w}/${o.c.n}</b> ván ${flags(o.c.rg)}`:''}</div></div>
       <button class="pickbtn sm" data-act="pick" data-id="${o.a.id}">Chọn ${o.a.name}</button></div>`).join('')}</div>`;
 }
 function renderTier(){
@@ -303,17 +393,19 @@ function coachHTML(A,E,AL,EL){
     else if(de<-.8&&dl<-.8) out.push(['⏱️','Nhịp trận','Đối thủ nhỉnh hơn ở mọi giai đoạn — tập trung bắt lẻ và giao tranh ở chỗ hẹp, có tầm nhìn để lật kèo; tránh đánh tổng ở chỗ trống.']);
     else out.push(['⏱️','Nhịp trận',`Hai đội khá cân ở đầu trận; đội ${pa.m>=pe.m?'bạn':'đối thủ'} mạnh hơn ở <b>giữa trận (phút 8–14)</b> — đó là giai đoạn quyết định quanh các mục tiêu lớn.`]);
   }
-  // 2) Điều kiện thắng
-  if(A.length>=3){
-    const cnt=f=>A.filter(h=>has(h,f)).length;
-    const dive=A.filter(h=>has(h,'b')||(has(h,'g')&&has(h,'d'))).length, poke=cnt('p'), cc=cnt('q'), carry=A.find(h=>has(h,'l')&&h.lanes[0]==='A'), peel=A.find(h=>has(h,'h')||(has(h,'t')&&has(h,'q')));
-    let wc;
-    if(carry&&peel) wc=`<b>Bảo kê ${carry.name}</b>: ${peel.name} luôn đứng cạnh ${carry.name}, dùng ${SKL(peel,'cc')||'khiên/hồi máu'} chặn sát thủ lao vào. ${carry.name} đủ đồ là đội thắng giao tranh tổng.`;
-    else if(dive>=2) wc=`<b>Lao vào bắt chủ lực</b>: ${A.filter(h=>has(h,'b')||has(h,'g')).map(h=>h.name).slice(0,3).join(', ')} cùng vào một lúc, ưu tiên hạ xạ thủ/pháp sư địch trước khi họ kịp xả sát thương.`;
-    else if(poke>=2) wc=`<b>Cấu rỉa trước mục tiêu lớn</b>: dùng ${A.filter(h=>has(h,'p')).map(h=>h.name).join(', ')} bào máu đối thủ trước khi đánh Rồng/Tà Thần, chỉ giao tranh khi địch đã mất 30–40% máu.`;
-    else if(cc>=3) wc=`<b>Giao tranh tổng bằng khống chế dây chuyền</b>: nối ${A.filter(h=>has(h,'q')).slice(0,3).map(h=>SKL(h,'cc')).join(' → ')} lên cùng một mục tiêu, đánh ở khe hẹp/cửa rừng.`;
-    else wc='<b>Đánh theo mục tiêu</b>: lấy lợi thế từ rừng và mục tiêu lớn, tránh giao tranh khi thiếu người.';
-    out.push(['🏆','Điều kiện thắng',wc]);
+  // 2) Lối đánh + điều kiện thắng
+  if(A.length>=2){
+    const aa=archOf(A),ma=aa[0][0];let txt=`Đội bạn hợp lối <b>${ARCH[ma].ic} ${ARCH[ma].n}</b>. ${planText(ma,A)}`;
+    if(E.length>=2){const ea=archOf(E)[0][0];
+      txt+=`<br>Đối thủ thiên về <b>${ARCH[ea].ic} ${ARCH[ea].n}</b>`;
+      if(BEATS[ma].includes(ea)) txt+=' — lối của bạn <span class="good">khắc chế</span> lối này, cứ đánh đúng kế hoạch.';
+      else if(BEATS[ea].includes(ma)){const alt=aa.slice(1).find(([a,v])=>BEATS[a].includes(ea)&&v>=aa[0][1]*.6);
+        txt+=` — lối này <span class="bad">khắc</span> đội bạn.`+(alt?` Nên chuyển sang <b>${ARCH[alt[0]].n}</b>: ${planText(alt[0],A)}`:` Nếu còn lượt pick, ưu tiên tướng đánh được lối ${BEATS[ea].length?Object.keys(BEATS).filter(a=>BEATS[a].includes(ea)).map(a=>ARCH[a].n).join(' / '):''}.`);}
+      else txt+='.';
+      if(ea==='dive'||ea==='fight'){const pk=keyH(A,'counter',2);if(pk.length&&ma!=='counter')txt+=`<br>🔄 <b>Phòng thủ phản công</b>: đối thủ thích lao vào — đứng sát trụ, giữ ${pk.map(h=>bestTag(h,'counter')).join(', ')} chờ họ vào rồi đánh trả.`}
+      const pu=keyH(A,'push',2);if(pu.length&&ma!=='push')txt+=`<br>🏰 <b>Đẩy trụ</b>: ${pu.map(h=>h.name).join(', ')} dọn lính nhanh — sau mỗi pha thắng giao tranh, dẫn lính phá trụ ngay thay vì đi farm.`;
+    }
+    out.push(['🧩','Lối đánh & điều kiện thắng',txt]);
   }
   // 3) Kế hoạch rừng / gank
   if(E.length>=2){
@@ -371,7 +463,7 @@ function renderIntel(){
   const card=(title,T,isEnemy)=>{
     if(!T.length)return `<div class="card"><h3>${title}</h3><div class="empty" style="padding:12px">Chưa có tướng</div></div>`;
     const p=prof(T);
-    const style=p.tank>=2?'Trâu, đánh tổng':p.ass>=2?'Bắt lẻ, ám sát':p.poke>=2?'Cấu rỉa từ xa':p.late>=2?'Chờ cuối trận':'Cân bằng';
+    const ar=archOf(T);const style=T.length>=2?`${ARCH[ar[0][0]].ic} ${ARCH[ar[0][0]].n}`+(ar[1][1]>=ar[0][1]*.8?` · ${ARCH[ar[1][0]].n}`:''):'Chưa rõ';
     const tips=[];
     if(isEnemy){
       if(p.phy>=3)tips.push('Đối thủ chủ yếu gây <b>sát thương vật lý</b> → ưu tiên đồ giáp: <b>Áo choàng băng giá</b>, <b>Khiên huyền thoại</b> (giảm tốc đánh xạ thủ địch).');

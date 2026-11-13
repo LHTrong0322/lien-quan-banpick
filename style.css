@@ -225,3 +225,4 @@ footer p{margin:6px 0}
 .ct{font-weight:800;font-size:13px;margin-bottom:4px}
 .cb{font-size:13px;line-height:1.55;color:#d3d9ee}
 .good{color:#4ade80;font-weight:700}.bad{color:#ff8a96;font-weight:700}
+.combo .lb{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(255,184,0,.18);color:#ffcf5a;margin-left:4px;vertical-align:middle}

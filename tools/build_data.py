@@ -10,6 +10,10 @@ C = sys.argv[2]   # đường dẫn Arena-of-Valor-Draft-Suggestion
 OUT = sys.argv[3] # thư mục site
 PRO_DIR = sys.argv[4] if len(sys.argv) > 4 else None  # thư mục dữ liệu giải đấu (data/pro)
 
+_ns = {}
+exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'profiles.py'), encoding='utf-8').read(), _ns)
+PROF = _ns['P']  # hồ sơ tướng viết tay: chất tướng, điểm mạnh theo chiêu, điểm yếu
+
 def norm(s):
     s = unicodedata.normalize('NFD', s.replace('đ', 'd').replace('Đ', 'D'))
     s = ''.join(ch for ch in s if unicodedata.category(ch) != 'Mn')
@@ -143,6 +147,7 @@ for h in g:
     if not img and h.get('portrait'): img = h['portrait']  # ảnh trên trang Garena (chỉ hiện khi web chạy ngoài Claude)
     heroes.append({'id': k, 'cid': (c or {}).get('id'), 'name': h['name'].replace('’', "'"), 'title': h.get('title', ''),
                    'cls': cls, 'lanes': lanes, 'f': ''.join(sorted(f)), 'img': img, 'meta': 0, 'sk': sk})
+    if k in PROF: heroes[-1]['pf'] = PROF[k]
 
 # ánh xạ tên tướng ở các nguồn khác về id
 PRO_NAME = {'wirosableng': 'wiro', 'zanis': 'trieuvan', 'diaochan': 'dieuthuyen', 'lubu': 'lubo', 'jinnar': 'jinna', 'flowborn': 'flowborn'}
