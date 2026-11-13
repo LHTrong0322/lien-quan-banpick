@@ -106,19 +106,20 @@ def liquipedia(page):
         name = tds[1].get_text(' ', strip=True)
         name = re.sub(r'^(.+) \1$', r'\1', name).replace(' (Marksman)', '*').replace(' (Mage)', '^')
         p, w, b = (int(tds[i].get_text(strip=True) or 0) for i in (2, 3, 15))
-        withs = []
+        lists = {'Played With': [], 'Played Against': []}
         for tb in tds[-1].find_all('table'):
             th = tb.find('th')
-            if th and th.get_text(strip=True) == 'Played With':
+            lab = th.get_text(strip=True) if th else ''
+            if lab in lists:
                 for r in tb.find_all('tr'):
                     c = r.find_all('td')
                     if len(c) >= 5 and c[2].get_text(strip=True).isdigit():
                         hn = c[1].get_text(' ', strip=True)
                         hn = re.sub(r'^(.+) \1$', r'\1', hn).replace(' (Marksman)', '*').replace(' (Mage)', '^')
-                        withs.append(f'{hn}:{int(c[2].get_text(strip=True))}:{int(c[3].get_text(strip=True))}')
-                    if len(withs) >= 4:
+                        lists[lab].append(f'{hn}:{int(c[2].get_text(strip=True))}:{int(c[3].get_text(strip=True))}')
+                    if len(lists[lab]) >= 8:
                         break
-        out.append('|'.join([name, str(p), str(w), str(b), ','.join(withs)]))
+        out.append('|'.join([name, str(p), str(w), str(b), ','.join(lists['Played With']), ','.join(lists['Played Against'])]))
     return games, out
 
 
@@ -169,7 +170,41 @@ def tournaments():
     json.dump(cfg, open(f'{OUT}/sources.json', 'w'), ensure_ascii=False, indent=2)
 
 
-for label, fn in [('Rank VN', rank_vn), ('Rank TH', rank_th)]:
+# ---------- Kèo khắc chế + đồng minh từng tướng (lienquanmobile.gg) ----------
+def hero_pages():
+    soup = BeautifulSoup(get('https://lienquanmobile.gg/champions/'), 'html.parser')
+    links = []
+    for tr in soup.select('tbody tr'):
+        a = tr.select_one('a.table__champion__info')
+        nm = tr.select_one('span.name')
+        if a and nm:
+            links.append((nm.get_text(strip=True), a['href']))
+    res = {}
+    for nm, url in links:
+        try:
+            pg = BeautifulSoup(get(url), 'html.parser')
+            d = {}
+            for h2 in pg.select('h2.block__title'):
+                t = h2.get_text(' ', strip=True)
+                key = 'countered_by' if t.startswith('Tướng khắc chế') else 'allies' if t.startswith('Đồng minh tốt') else None
+                if not key:
+                    continue
+                blk = h2.find_parent(class_='block') or h2.parent
+                names = [i.get('alt', '').strip() for i in blk.find_all('img')]
+                names = [x for x in names if x] or [a_.get_text(strip=True) for a_ in blk.find_all('a') if a_.get_text(strip=True)]
+                d[key] = names[:8]
+            if d:
+                res[nm] = d
+        except Exception as e:
+            pass
+        time.sleep(0.8)
+    if len(res) < 80:
+        raise ValueError(f'chỉ đọc được {len(res)} tướng')
+    json.dump({'source': 'lienquanmobile.gg', 'updated': TODAY, 'heroes': res}, open(f'{OUT}/lqmb_matchups.json', 'w'), ensure_ascii=False, indent=0)
+    return len(res)
+
+
+for label, fn in [('Rank VN', rank_vn), ('Rank TH', rank_th), ('Kèo khắc chế VN', hero_pages)]:
     try:
         report.append(f'{label}: {fn()} tướng')
     except Exception as e:
