@@ -7,7 +7,7 @@
 Nguồn nào lỗi thì giữ nguyên file cũ, không làm hỏng web.
 Cách dùng: python3 tools/fetch_meta.py data_pro
 """
-import gzip, json, re, sys, time, urllib.request, datetime, html as H
+import gzip, json, re, sys, time, urllib.request, urllib.parse, datetime, html as H
 from bs4 import BeautifulSoup
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else 'data_pro'
@@ -78,7 +78,14 @@ def rank_th():
 
 # ---------- Giải đấu (Liquipedia) ----------
 def liquipedia(page):
-    soup = BeautifulSoup(get(f'https://liquipedia.net/honorofkings/{page}/Statistics'), 'html.parser')
+    # Liquipedia chặn tải trang trực tiếp từ máy chủ GitHub → dùng API chính thức (action=parse), đúng quy định:
+    # có User-Agent riêng, nén gzip, tối đa 1 lần parse / 30 giây.
+    url = ('https://liquipedia.net/honorofkings/api.php?action=parse&format=json&formatversion=2&prop=text&page='
+           + urllib.parse.quote(page + '/Statistics'))
+    data = json.loads(get(url))
+    if 'error' in data:
+        raise ValueError(data['error'].get('info', 'lỗi API'))
+    soup = BeautifulSoup(data['parse']['text'], 'html.parser')
     games = re.search(r'(\d+) games? played', soup.get_text(' '))
     games = int(games.group(1)) if games else 0
     out = []
@@ -112,7 +119,7 @@ def tournaments():
         for page in reg['pages']:  # thử mùa mới nhất trước
             try:
                 games, rows = liquipedia(page)
-                time.sleep(4)  # tôn trọng giới hạn tải của Liquipedia
+                time.sleep(31)  # giới hạn của Liquipedia: 1 lần parse / 30 giây
                 if games >= reg.get('min_games', 40) and len(rows) >= 30:
                     save(reg['file'], f'{games}#' + ';'.join(rows) + '\n')
                     reg['current'] = page
@@ -121,7 +128,7 @@ def tournaments():
                     break
             except Exception as e:
                 report.append(f"{reg['region']}: bỏ qua {page} ({e.__class__.__name__}: {str(e)[:80]})")
-                time.sleep(4)
+                time.sleep(31)
         if not done:
             report.append(f"{reg['region']}: giữ số liệu cũ")
     json.dump(cfg, open(f'{OUT}/sources.json', 'w'), ensure_ascii=False, indent=2)
