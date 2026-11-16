@@ -1,6 +1,6 @@
-13/11/2026
+15/11/2026
 Rank VN: 129 tướng
-Rank TH: 125 tướng
+Rank TH: lỗi, giữ số liệu cũ (ValueError: đọc được quá ít tướng)
 Kèo khắc chế VN: 129 tướng
 vn: Arena_of_Glory/2026/Winter (327 ván, 89 tướng)
 th: RoV_Pro_League/2026/Winter (307 ván, 93 tướng)
