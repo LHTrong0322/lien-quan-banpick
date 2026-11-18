@@ -71,6 +71,22 @@ async function onPost(request, env) {
   return J({ error: 'unknown action' }, 400);
 }
 
+/* ===== Chuyển giọng nói → chữ bằng Whisper (Cloudflare Workers AI) =====
+   Dùng khi trình duyệt không tự nhận giọng được (lỗi "network": Cốc Cốc, Brave, Opera, máy chặn Google…).
+   Trình duyệt gửi file WAV ngắn (1 câu lệnh) lên đây, máy chủ trả về chữ. */
+const STT_PROMPT = 'Ban pick Liên Quân Mobile. Lệnh: cấm, chọn, pick, địch chọn, đối thủ cấm, khắc chế, counter, đường rừng, đường giữa, đường rồng, tà thần, trợ thủ, hoàn tác. Tướng: Tulen, Nakroth, Murad, Yena, Aoi, Violet, Thane, Liliana, Florentino, Zata, Lorion, Yorn, Hayate, Capheny, Elsu, Arum, Alice, Zip, Toro, Grakk, Krixi, Raz, Zill, Veres, Volkath, Omen, Maloch, Ryoma, Qi, Bijan, Dirak, Iggy, Ilumia, Ishar, Lauriel, Keera, Kriknak, Quillen, Triệu Vân, Ngộ Không, Lữ Bố, Điêu Thuyền, Zephys, Y\'bneth, Wonder Woman.';
+function b64(buf) { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+async function onStt(request, env) {
+  if (!env.AI) return J({ error: 'Máy chủ chưa bật Workers AI' }, 503);
+  const ip = request.headers.get('cf-connecting-ip') || 'x';
+  if (env.CONTRIB && await limited(env, ip, 's', 80)) return J({ error: 'Bạn nói nhanh quá, nghỉ vài phút rồi thử lại nhé' }, 429);
+  const buf = await request.arrayBuffer();
+  if (buf.byteLength < 2000) return J({ text: '' });
+  if (buf.byteLength > 1500000) return J({ error: 'Đoạn ghi âm quá dài' }, 413);
+  const r = await env.AI.run('@cf/openai/whisper-large-v3-turbo', { audio: b64(buf), language: 'vi', task: 'transcribe', vad_filter: true, initial_prompt: STT_PROMPT });
+  return J({ text: (r && r.text || '').trim() });
+}
+
 /* Worker chính: /api/contrib do code xử lý, còn lại trả file tĩnh (index.html, app.js, ảnh…) */
 export default {
   async fetch(request, env) {
@@ -81,6 +97,9 @@ export default {
         if (request.method === 'POST') return await onPost(request, env);
         return J({ error: 'method' }, 405);
       } catch (e) { return J({ error: 'Lỗi máy chủ: ' + e.message }, 500); }
+    }
+    if (url.pathname === '/api/stt' && request.method === 'POST') {
+      try { return await onStt(request, env); } catch (e) { return J({ error: 'Lỗi nhận giọng: ' + e.message }, 500); }
     }
     return env.ASSETS.fetch(request);
   }

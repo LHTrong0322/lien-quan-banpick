@@ -40,3 +40,7 @@ Góp ý có nhiều 👍 được cộng điểm khi gợi ý pick (tối đa ng
 
 Lưu chung bằng **Cloudflare KV**: khai báo sẵn trong `wrangler.jsonc` (binding `CONTRIB`), Cloudflare tự tạo kho ở lần deploy đầu. Code máy chủ nằm ở `src/contrib.js`.
 Nếu kho chưa sẵn sàng, trang tự chuyển sang lưu trên máy người dùng.
+
+### Khi trình duyệt không tự nhận giọng được
+Một số trình duyệt (Cốc Cốc, Brave, Opera, Firefox, hoặc mạng chặn máy chủ Google) báo lỗi "network".
+Web tự chuyển sang **chế độ AI**: ghi âm từng câu ngay trên trình duyệt, gửi lên `/api/stt` (Cloudflare Workers AI, mô hình Whisper) để chuyển thành chữ, rồi chạy lệnh.

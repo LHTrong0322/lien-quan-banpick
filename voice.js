@@ -172,6 +172,12 @@ function makeRec(){
       else{lastInterim=x[0].transcript;holdUntil=0;showBar(x[0].transcript,'<span class="vdots">Đang nghe…</span>',true)}}};
   r.onerror=e=>{log('lỗi '+e.error);
     if(e.error==='no-speech'||e.error==='aborted')return; // im lặng: tự mở lại ở onend
+    if(['network','service-not-allowed','language-not-supported'].includes(e.error)){
+      /* trình duyệt không tự nhận giọng được (Cốc Cốc, Brave, Opera, mạng chặn Google…) → chuyển sang máy chủ AI của web */
+      MODE='ai';try{localStorage.setItem('bp-lq-voice','ai')}catch(_){}
+      on=false;try{rec.abort()}catch(_){}
+      showBar('','🔁 Trình duyệt này không tự nhận giọng được — chuyển sang <b>chế độ AI của web</b>…',true);
+      startAI();return}
     if(ERR[e.error]){on=false;btn.classList.remove('on');showBar('',ERR[e.error],true)}};
   r.onend=()=>{log('ngắt');
     if(!heard&&lastInterim){const t=lastInterim;lastInterim='';run(t)}heard=false;
@@ -183,16 +189,71 @@ function makeRec(){
 function listen(){if(!on||speaking)return;
   try{rec=makeRec();rec.start()}
   catch(e){log('không mở lại được');if(++restartFails>4){on=false;btn.classList.remove('on');showBar('','🎙️ Trình duyệt không cho tự mở lại mic. Bấm 🎙️ mỗi lần muốn nói nhé.',true)}else setTimeout(listen,600)}}
-function start(){on=true;idleAt=Date.now();restartFails=0;btn.classList.add('on');holdUntil=0;
+function start(){if(MODE==='ai')return startAI();on=true;idleAt=Date.now();restartFails=0;btn.classList.add('on');holdUntil=0;
   showBar('','⏳ Đang mở micro… (lần đầu trình duyệt sẽ hỏi quyền, bấm <b>Cho phép</b>)',true);
   try{rec=makeRec();rec.start()}catch(e){on=false;btn.classList.remove('on');showBar('','⚠️ Không mở được mic: '+e.message,true)}}
-function stop(){on=false;btn.classList.remove('on');try{rec&&rec.stop()}catch(e){}log('tắt')}
+function stop(){on=false;btn.classList.remove('on');try{rec&&rec.stop()}catch(e){}stopAI();log('tắt')}
+/* ===== Chế độ AI: tự ghi âm từng câu, gửi lên máy chủ của web (Whisper) để chuyển thành chữ =====
+   Chạy được trên mọi trình duyệt có micro (Cốc Cốc, Brave, Firefox, Opera…), không phụ thuộc dịch vụ Google. */
+let MODE=(()=>{try{return localStorage.getItem('bp-lq-voice')}catch(e){return null}})()||(NOSR?'ai':'web');
+let ai=null;
+async function startAI(){
+  if(ai)return;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){showBar('','⚠️ Trình duyệt này không cho dùng micro.',true);return}
+  btn.classList.add('on');showBar('','⏳ Đang mở micro (chế độ AI)…',true);log('AI: mở mic');
+  let stream;try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}})}
+  catch(e){btn.classList.remove('on');showBar('',INFRAME?ERR['not-allowed']:'⚠️ Chưa được phép dùng micro. Bấm 🔒 cạnh thanh địa chỉ → Micro → <b>Cho phép</b>, rồi bấm lại 🎙️.',true);log('AI: bị chặn mic');return}
+  const AC=window.AudioContext||window.webkitAudioContext;const ctx=new AC();
+  try{await ctx.resume()}catch(e){}
+  const src=ctx.createMediaStreamSource(stream),proc=ctx.createScriptProcessor(4096,1,1);
+  const st2={stream,ctx,src,proc,buf:[],pre:[],talking:false,quiet:0,loud:0,floor:.01,sending:0,idleAt:Date.now()};ai=st2;
+  const fr=4096/ctx.sampleRate; // giây mỗi khối
+  proc.onaudioprocess=e=>{
+    if(ai!==st2)return;
+    const d=new Float32Array(e.inputBuffer.getChannelData(0));let sum=0;for(let i=0;i<d.length;i++)sum+=d[i]*d[i];const rms=Math.sqrt(sum/d.length);
+    if(speaking){st2.talking=false;st2.buf=[];return} // web đang đọc: không ghi
+    const thr=Math.max(.012,st2.floor*2.6);
+    if(!st2.talking){st2.floor=st2.floor*.95+rms*.05;st2.pre.push(d);if(st2.pre.length>3)st2.pre.shift();
+      if(rms>thr){if(++st2.loud>=2){st2.talking=true;st2.buf=st2.pre.slice();st2.quiet=0;log('AI: có tiếng');showBar('','🎙️ <b>Đang nghe…</b>',true)}}else st2.loud=0;
+      if(Date.now()-st2.idleAt>120000){stop();showBar('','🎙️ Đã tự tắt mic sau 2 phút không nói. Bấm 🎙️ để bật lại.')}
+      return}
+    st2.buf.push(d);
+    if(rms<thr)st2.quiet+=fr;else st2.quiet=0;
+    const dur=st2.buf.length*fr;
+    if(st2.quiet>.85||dur>7){const chunks=st2.buf;st2.buf=[];st2.talking=false;st2.loud=0;st2.idleAt=Date.now();
+      if(dur-st2.quiet>.35)sendAI(chunks,ctx.sampleRate)}
+  };
+  src.connect(proc);proc.connect(ctx.destination);
+  log('AI: đang nghe');showBar('','🎙️ <b>Đang nghe (chế độ AI) — cứ nói</b>, ngừng 1 giây là web xử lý. VD <i>“cấm Tulen”</i>, <i>“chọn tướng khắc chế Aoi”</i>',true);
+  if(ctx.state!=='running')showBar('','🎙️ Bấm 🎙️ thêm 1 lần nữa để bắt đầu nghe.',true);
+}
+function stopAI(){const a=ai;ai=null;if(!a)return;try{a.proc.disconnect();a.src.disconnect()}catch(e){}a.stream.getTracks().forEach(t=>t.stop());try{a.ctx.close()}catch(e){}}
+/* ghép các khối âm thanh → WAV 16kHz mono (định dạng máy chủ nào cũng đọc được) */
+function toWav(chunks,rate){
+  const n=chunks.reduce((s,c)=>s+c.length,0),all=new Float32Array(n);let o=0;chunks.forEach(c=>{all.set(c,o);o+=c.length});
+  const R=16000,ratio=rate/R,m=Math.floor(n/ratio),pcm=new Int16Array(m);
+  for(let i=0;i<m;i++){const a=Math.floor(i*ratio),b=Math.min(n,Math.floor((i+1)*ratio));let s=0;for(let j=a;j<b;j++)s+=all[j];const v=Math.max(-1,Math.min(1,s/Math.max(1,b-a)));pcm[i]=v<0?v*0x8000:v*0x7fff}
+  const buf=new ArrayBuffer(44+pcm.length*2),v=new DataView(buf),w=(p,t)=>{for(let i=0;i<t.length;i++)v.setUint8(p+i,t.charCodeAt(i))};
+  w(0,'RIFF');v.setUint32(4,36+pcm.length*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+  v.setUint32(24,R,true);v.setUint32(28,R*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,pcm.length*2,true);
+  new Int16Array(buf,44).set(pcm);return new Blob([buf],{type:'audio/wav'});
+}
+async function sendAI(chunks,rate){
+  log('AI: gửi câu');showBar('','⏳ Đang chuyển giọng nói thành chữ…',true);
+  try{const r=await fetch('/api/stt',{method:'POST',headers:{'content-type':'audio/wav'},body:toWav(chunks,rate)});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){log('AI: lỗi '+r.status);showBar('','⚠️ '+(d.error||('Máy chủ nhận giọng lỗi '+r.status))+(r.status===404?' — trang đang chạy bản không có máy chủ (vd khung Claude). Mở link workers.dev.':''),true);return}
+    const t=(d.text||'').replace(/[.。!?]+$/,'').trim();log('AI: “'+t+'”');
+    if(!t){showBar('','🤔 Chưa nghe rõ, nói lại nhé.',true);return}
+    run(t);
+  }catch(e){log('AI: mất mạng');showBar('','⚠️ Không gửi được tới máy chủ (mất mạng hoặc đang mở bản không có máy chủ).',true)}
+}
 /* bấm = bật/tắt (dùng sự kiện click: điện thoại chỉ cho mở mic trong lần bấm thật) */
-function toggle(){if(on){stop();showBar('','🎙️ Đã tắt mic');return}start()}
-if(!NOSR)btn.onclick=toggle;
+function toggle(){if(on||ai){stop();showBar('','🎙️ Đã tắt mic');return}start()}
+btn.onclick=toggle;
 /* gõ lệnh bằng chữ (dự phòng khi mic bị chặn, hoặc muốn ra lệnh nhanh) */
 const vin=document.getElementById('vin');
-if(NOSR){btn.classList.add('na');btn.onclick=()=>showBar('','⚠️ Trình duyệt này chưa hỗ trợ nhận giọng nói (vd Firefox). Mở bằng Chrome, Edge hoặc Safari — hoặc gõ lệnh vào ô bên dưới.',true)}
+
 if(vin)vin.addEventListener('keydown',e=>{if(e.key==='Enter'&&vin.value.trim()){run(vin.value.trim());vin.value=''}});
 
 document.addEventListener('click',e=>{const b=e.target.closest('[data-vpick]');if(!b||!pending)return;const id=b.dataset.vpick,h=BY[id];
