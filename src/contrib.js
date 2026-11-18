@@ -87,6 +87,41 @@ async function onStt(request, env) {
   return J({ text: (r && r.text || '').trim() });
 }
 
+/* ===== Bộ hiểu lệnh bằng AI (dự phòng khi luật có sẵn không hiểu câu nói) =====
+   Câu nói sai chính tả, giọng địa phương, tên tướng đọc kiểu Việt → mô hình ngôn ngữ đoán ý → trả về lệnh có cấu trúc. */
+const INTENT_SYS = `Bạn là bộ hiểu lệnh giọng nói cho công cụ ban-pick game Liên Quân Mobile.
+Câu của người dùng là tiếng Việt nói, có thể sai chính tả, sai dấu, giọng miền Bắc/Trung/Nam, tiếng lóng game thủ, tên tướng tiếng Anh đọc kiểu Việt (vd "na crốt"=Nakroth, "giọn"=Yorn, "vai ô lét"=Violet, "tu lên"=Tulen, "mu rát"=Murad, "dê phít"=Zephys).
+Chỉ trả về MỘT dòng JSON, không giải thích:
+{"action":"ban|pick|auto_pick|auto_ban|undo|none","side":"ally|enemy","heroes":["tên đúng trong danh sách"],"lane":"T|J|M|A|S|null","counter":"tên đúng trong danh sách hoặc null"}
+Quy tắc:
+- cấm/ban/khóa/chặn/loại = ban. chọn/pick/lấy/cầm/chơi/xài/lựa = pick.
+- địch/đối thủ/bên kia/team kia/tụi nó/họ = enemy; mặc định ally.
+- Muốn tướng khắc chế/counter/bắt bài một tướng mà KHÔNG nêu tướng muốn chọn → auto_pick, counter = tướng bị khắc.
+- "chọn giúp", "pick đi", "chọn tướng mạnh nhất" không có tên → auto_pick. "cấm giúp", "cấm tướng nguy hiểm" không tên → auto_ban.
+- hoàn tác/quay lại/lùi lại/huỷ = undo. Không phải lệnh = none.
+- Đường: tà thần/top/đường trên=T; rừng/jungle=J; giữa/mid=M; rồng/xạ thủ/ad/đường dưới=A; trợ thủ/support/sp=S.
+- heroes và counter PHẢI là tên có trong danh sách tướng được cung cấp; đoán tên gần nhất về cách phát âm.`;
+async function onIntent(request, env) {
+  if (!env.AI) return J({ error: 'Máy chủ chưa bật Workers AI' }, 503);
+  const ip = request.headers.get('cf-connecting-ip') || 'x';
+  if (env.CONTRIB && await limited(env, ip, 'i', 80)) return J({ error: 'Bạn ra lệnh nhanh quá, nghỉ vài phút nhé' }, 429);
+  let b; try { b = await request.json(); } catch { return J({ error: 'bad json' }, 400); }
+  const text = String(b.text || '').slice(0, 200), names = (b.heroes || []).map(x => String(x).slice(0, 30)).slice(0, 200);
+  if (!text.trim()) return J({ action: 'none' });
+  const r = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+    messages: [
+      { role: 'system', content: INTENT_SYS + '\nDanh sách tướng: ' + names.join(', ') },
+      { role: 'user', content: 'cấm na crốt' }, { role: 'assistant', content: '{"action":"ban","side":"ally","heroes":["Nakroth"],"lane":null,"counter":null}' },
+      { role: 'user', content: 'bên kia lấy con giọn với thên' }, { role: 'assistant', content: '{"action":"pick","side":"enemy","heroes":["Yorn","Thane"],"lane":null,"counter":null}' },
+      { role: 'user', content: 'cho em con nào bắt bài con ao i đi rừng' }, { role: 'assistant', content: '{"action":"auto_pick","side":"ally","heroes":[],"lane":"J","counter":"Aoi"}' },
+      { role: 'user', content: text }],
+    max_tokens: 120, temperature: 0 });
+  const out = typeof r?.response === 'string' ? r.response : JSON.stringify(r?.response || {});
+  const m = out.match(/\{[\s\S]*\}/); let o = {};
+  try { o = m ? JSON.parse(m[0]) : {}; } catch { o = {}; }
+  return J({ action: o.action || 'none', side: o.side === 'enemy' ? 'enemy' : 'ally', heroes: Array.isArray(o.heroes) ? o.heroes.slice(0, 5) : [], lane: 'TJMAS'.includes(o.lane) && o.lane ? o.lane : null, counter: o.counter || null });
+}
+
 /* Worker chính: /api/contrib do code xử lý, còn lại trả file tĩnh (index.html, app.js, ảnh…) */
 export default {
   async fetch(request, env) {
@@ -97,6 +132,9 @@ export default {
         if (request.method === 'POST') return await onPost(request, env);
         return J({ error: 'method' }, 405);
       } catch (e) { return J({ error: 'Lỗi máy chủ: ' + e.message }, 500); }
+    }
+    if (url.pathname === '/api/intent' && request.method === 'POST') {
+      try { return await onIntent(request, env); } catch (e) { return J({ error: 'Lỗi hiểu lệnh: ' + e.message }, 500); }
     }
     if (url.pathname === '/api/stt' && request.method === 'POST') {
       try { return await onStt(request, env); } catch (e) { return J({ error: 'Lỗi nhận giọng: ' + e.message }, 500); }

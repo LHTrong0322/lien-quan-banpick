@@ -44,3 +44,7 @@ Nếu kho chưa sẵn sàng, trang tự chuyển sang lưu trên máy người d
 ### Khi trình duyệt không tự nhận giọng được
 Một số trình duyệt (Cốc Cốc, Brave, Opera, Firefox, hoặc mạng chặn máy chủ Google) báo lỗi "network".
 Web tự chuyển sang **chế độ AI**: ghi âm từng câu ngay trên trình duyệt, gửi lên `/api/stt` (Cloudflare Workers AI, mô hình Whisper) để chuyển thành chữ, rồi chạy lệnh.
+
+### Hiểu tiếng Việt lơ lớ
+- Bộ từ vựng (`voice.js` → `TONED`, `PHR`, `ALIAS`) sửa sai chính tả, sai dấu, giọng vùng miền (tr/ch, r/d/gi, v/d, n/ng…) và tiếng lóng ("cầm", "khoá", "bên kia", "cao tơ"…).
+- Câu vẫn không hiểu → gửi `/api/intent` (Workers AI, Llama 3.3) để đoán ý, trả về lệnh chuẩn rồi web tự thực hiện.
