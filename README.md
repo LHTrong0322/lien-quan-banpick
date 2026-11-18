@@ -33,3 +33,10 @@ Bấm nút **🎙️ Giọng nói** (trên điện thoại là nút tròn góc d
 - “xem đường giữa”, “gợi ý cấm”, “hoàn tác”, “làm lại”, “tắt giọng”, “tắt mic”
 
 Chạy tốt trên Chrome/Edge (máy tính, Android) và Safari (iPhone). Firefox chưa hỗ trợ nhận giọng nói.
+
+## Góp ý bài đánh (người chơi cùng làm thuật toán thông minh hơn)
+Tab **💬 Góp ý**: gửi kèo khắc chế, cặp bài hoặc cả bài đánh 5 tướng, kèm cách đánh. Người khác bấm 👍/👎.
+Góp ý có nhiều 👍 được cộng điểm khi gợi ý pick (tối đa ngang một kèo khắc chế mạnh); bị 👎 từ 3 trở lên thì bị ẩn và bỏ qua.
+
+Lưu chung cần **Cloudflare KV**: tạo KV namespace, rồi trong dự án Pages → Settings → Bindings → thêm KV namespace với tên biến `CONTRIB`, sau đó deploy lại.
+Chưa gắn KV thì trang tự chuyển sang lưu trên máy người dùng.

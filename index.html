@@ -29,7 +29,7 @@
   </header>
 
   <div class="vbar" id="vbar" hidden>
-    <div class="vbody"><div class="vtxt" id="vtxt"></div><div class="vres" id="vres"></div></div>
+    <div class="vbody"><div class="vtxt" id="vtxt"></div><div class="vres" id="vres"></div><input class="vin" id="vin" placeholder="⌨️ Hoặc gõ lệnh rồi Enter: cấm Tulen · địch chọn Yena · chọn gợi ý số 1" autocomplete="off"></div>
     <button class="vbtn" id="vhelp" title="Câu lệnh mẫu">?</button><button class="vbtn" id="vclose" title="Đóng">✕</button>
   </div>
 
@@ -50,6 +50,7 @@
         <button class="ctab" data-mode="pick" id="tab-pick">Gợi ý pick</button>
         <button class="ctab" data-mode="ban" id="tab-ban">Gợi ý cấm</button>
         <button class="ctab" data-mode="tier" id="tab-tier">Tier meta</button>
+        <button class="ctab" data-mode="cong" id="tab-cong">💬 Góp ý</button>
       </div>
       <div class="lanepick" id="lanepick"></div>
       <div id="suggest"></div>
@@ -89,6 +90,7 @@
 
 <script src="data.js"></script>
 <script src="app.js"></script>
+<script src="community.js"></script>
 <script src="voice.js"></script>
 </body>
 </html>

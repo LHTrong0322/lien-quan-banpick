@@ -95,6 +95,7 @@ function matchup(C,E){
   if(cs) s+=cs*.35, mech||r.push([cs*.35,`Khắc chế ${n}: ${PF(C).a.toLowerCase()}${pvTxt}`]);
   if(KNOWN[C.id]?.includes(E.id)&&!cs){s+=2;mech||r.push([2,`Khắc chế ${n}: ${PF(C).a.toLowerCase()}`])}
   if(pv&&pv.n>=5){const wr=(pv.w+2)/(pv.n+4);if(wr>.6){const v=(wr-.5)*8;s+=v;if(mech)r.push([v*.5,`Ở giải ${C.name} gặp ${n} thắng ${pv.w}/${pv.n} ván`])}else if(wr<.4){const v=(wr-.5)*8;s+=v;r.push([v,`Ở giải ${C.name} gặp ${n} chỉ thắng ${pv.w}/${pv.n} ván`])}}
+  if(window.UC)UC.match(C,E).forEach(([v,t])=>{s+=v;r.push([v,t])});
   if(es){s-=es*.35;r.push([-es*.35,`Bị ${n} khắc chế`])}
   if(KNOWN[E.id]?.includes(C.id)&&!es){s-=2;r.push([-2,`Bị ${n} khắc chế`])}
   return {s,r};
@@ -165,6 +166,7 @@ function rate(C,lane){
   const allies=LK.filter(k=>k!==lane&&st.ally[k]).map(k=>BY[st.ally[k]]);
   allies.forEach(a=>{const v=SYN[C.id]?.[a.id];if(v)add(v*.25,`Phối hợp tốt với ${N(a)}${has(a,'q')&&has(C,'b')?': nối '+SKL(a,'cc')+' của '+a.name+' với combo dồn sát thương':has(C,'q')&&(has(a,'b')||isSquishy(a))?': '+SKL(C,'cc')+' giữ mục tiêu cho '+a.name+' dồn sát thương':''}`);
     const c=CMB[C.id]?.[a.id];if(c){const wr=comboWR(c);if(wr>.52)add(Math.min(3,(wr-.5)*12*Math.min(1,c.n/15)),`Cặp bài pro với ${N(a)}: thắng ${c.w}/${c.n} ván ${flags(c.rg)}`);else if(wr<.42)add(-1,`Đi cùng ${N(a)} ở giải chỉ thắng ${c.w}/${c.n} ván`)}});
+  if(window.UC){allies.forEach(a=>{const u=UC.pair(C,a);if(u)add(u.v,u.t)});UC.comp(C,allies).forEach(([v,t])=>add(v,t))}
   allies.forEach(a=>{if(SYN[C.id]?.[a.id]||CMB[C.id]?.[a.id])return;const ps=pairSyn(C,a);if(ps&&ps.v>=1)add(ps.v*.45,`Cặp bài với ${N(a)}: ${ps.t}`)});
   const ens=LK.filter(k=>st.enemy[k]).map(k=>BY[st.enemy[k]]);
   if(allies.length>=2){
@@ -289,7 +291,9 @@ function renderCenter(){
   document.getElementById('tab-pick').classList.toggle('on',st.mode==='pick');
   document.getElementById('tab-ban').classList.toggle('on',st.mode==='ban');
   document.getElementById('tab-tier').classList.toggle('on',st.mode==='tier');
+  document.getElementById('tab-cong').classList.toggle('on',st.mode==='cong');
   if(st.mode==='tier'){renderTier();return}
+  if(st.mode==='cong'){if(window.UC)UC.render(document.getElementById('suggest'));return}
   const lp=document.getElementById('lanepick'),el=document.getElementById('suggest');
   if(st.mode==='ban'){
     lp.innerHTML='';
@@ -323,18 +327,18 @@ function comboHTML(lane,list){
   LK.forEach(k=>{if(k===lane)return;if(st.ally[k])partners.push({h:BY[st.ally[k]],have:true,lane:k,s:0});
     else ranked(k).slice(0,6).forEach(x=>partners.push({h:x.h,lane:k,s:x.s}))});
   list.slice(0,10).forEach(x=>partners.forEach(p=>{if(p.h.id===x.h.id)return;
-    const ps=pairSyn(x.h,p.h),c=CMB[x.h.id]?.[p.h.id];
+    const ps=pairSyn(x.h,p.h),c=CMB[x.h.id]?.[p.h.id],uc=window.UC&&UC.pair(x.h,p.h);
     const pro=c&&c.n>=6&&comboWR(c)>=.55;
-    if(!(ps&&ps.v>=1)&&!pro)return;
-    const sc=x.s+p.s*.3+(ps?ps.v*1.5:0)+(pro?(comboWR(c)-.5)*20*Math.min(1,c.n/15):0)+(p.have?1:0);
-    out.push({a:x.h,b:p.h,ps,c:pro?c:null,have:p.have,lane2:p.lane,s:sc})}));
+    if(!(ps&&ps.v>=1)&&!pro&&!uc)return;
+    const sc=x.s+p.s*.3+(ps?ps.v*1.5:0)+(pro?(comboWR(c)-.5)*20*Math.min(1,c.n/15):0)+(uc?uc.v*2:0)+(p.have?1:0);
+    out.push({a:x.h,b:p.h,ps,uc,c:pro?c:null,have:p.have,lane2:p.lane,s:sc})}));
   const seen=new Set(),per={},perB={};
   const top=out.sort((p,q)=>q.s-p.s).filter(o=>{const k=[o.a.id,o.b.id].sort().join();if(seen.has(k)||(per[o.a.id]||0)>=1||(perB[o.b.id]||0)>=2)return false;seen.add(k);per[o.a.id]=1;perB[o.b.id]=(perB[o.b.id]||0)+1;return true}).slice(0,5);
   if(!top.length)return '';
   return `<div class="sec">🤝 Cặp bài gợi ý</div><div class="combos">${top.map(o=>`
     <div class="combo"><div class="pair"><div class="pic">${pic(o.a)}</div><span>+</span><div class="pic ${o.have?'have':''}">${pic(o.b)}</div></div>
       <div class="cinfo"><div class="nm">${o.a.name} + ${o.b.name} ${o.ps?`<span class="lb">${o.ps.lb}</span>`:''}</div>
-      ${o.ps?`<div class="w">${o.ps.t}</div>`:''}
+      ${o.ps?`<div class="w">${o.ps.t}</div>`:''}${o.uc?`<div class="w">💬 Người chơi: ${UC.quote(o.uc.x)}</div>`:''}
       <div class="w">${o.have?`${o.b.name} đã có trong đội`:`${o.b.name} đi đường ${LN[o.lane2]}`}${o.c?` · giải đấu thắng <b>${o.c.w}/${o.c.n}</b> ván ${flags(o.c.rg)}`:''}</div></div>
       <button class="pickbtn sm" data-act="pick" data-id="${o.a.id}">Chọn ${o.a.name}</button></div>`).join('')}</div>`;
 }
@@ -353,12 +357,13 @@ function renderTier(){
 }
 function bigCard(x,act,tier){
   const max=Math.max(6,x.s);const w=why(x.r,3);const neg=[];
+  const uc=x.r.filter(r=>r[0]>0&&String(r[1]).startsWith('💬')).sort((a,b)=>b[0]-a[0])[0];if(uc&&!w.includes(uc)){if(w.length>=3)w.pop();w.push(uc)}
   const tip='';
   return `<div class="big"><span class="tierb" style="background:${act==='ban'?'var(--red)':TC[tier]}">${act==='ban'?'⛔':tier}</span>
     <div class="row"><div class="pic">${pic(x.h)}</div><div style="min-width:0"><div class="nm">${x.h.name} ${x.h.tier&&x.h.tier!=='C'?`<span class="mb t${x.h.tier}">Meta ${x.h.tier}</span>`:''}</div><div class="tt">${x.h.title||''}</div>
     <div class="meter" style="margin-top:6px;width:120px;max-width:100%"><i style="width:${Math.min(100,x.s/max*100)}%"></i></div></div></div>
     <ul class="why">${w.map(r=>`<li>${r[1]}</li>`).join('')}</ul>${tip}
-    <button class="pickbtn" data-act="${act}" data-id="${x.h.id}">${act==='ban'?'Cấm tướng này':'Chọn cho đường '+LN[st.focus]}</button></div>`;
+    <button class="pickbtn" data-act="${act}" data-id="${x.h.id}">${act==='ban'?'Cấm tướng này':'Chọn cho đường '+LN[st.focus]}</button>${act==='pick'?`<button class="ucadd" data-ucadd="${x.h.id}">💬 Góp kèo / mẹo cho ${x.h.name}</button>`:''}</div>`;
 }
 function chip(x,act,bad){
   const w=why(x.r,1,bad)[0];
@@ -451,6 +456,7 @@ function coachHTML(A,E,AL,EL){
   const lanes=LK.filter(k=>AL[k]&&EL[k]).map(k=>{const a=BY[AL[k]],e=BY[EL[k]];const d=matchup(a,e).s-matchup(e,a).s;
     return `<b>${LN[k]}</b>: ${a.name} vs ${e.name} — ${d>1.5?'<span class="good">thắng kèo, chủ động ép</span>':d<-1.5?'<span class="bad">khó kèo, chơi an toàn, chờ rừng</span>':'cân kèo, đánh theo tay'}`});
   if(lanes.length) out.push(['⚔️','Kèo từng đường',lanes.join('<br>')]);
+  if(window.UC&&A.length>=2){const cs=UC.compsFor(A);if(cs.length)out.push(['💬','Bài đánh người chơi gợi ý',cs.map(x=>`<b>${x.heroes.map(h=>BY[h]?.name).join(' + ')}</b>${x.arch?' · '+ARCH[x.arch].n:''}: ${UC.quote(x)}`).join('<br>')])}
   if(!out.length) return '';
   return `<div class="card coach"><h3>🧠 HLV phân tích</h3><div class="cgrid">${out.map(([ic,t,b])=>`<div class="citem"><div class="ct">${ic} ${t}</div><div class="cb">${b}</div></div>`).join('')}</div></div>`;
 }
