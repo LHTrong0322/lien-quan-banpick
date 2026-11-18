@@ -9,14 +9,14 @@ const NOSR=!SR;
 
 /* --- chuẩn hóa: bỏ dấu, gộp âm gần giống nhau để khớp tên tướng tiếng Anh đọc kiểu Việt --- */
 const plain=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/gi,'d').toLowerCase();
-const phon=s=>plain(s).replace(/[^a-z0-9]/g,'').replace(/ph/g,'f').replace(/th/g,'t').replace(/ch/g,'c').replace(/ck|q|c/g,'k').replace(/[zy]/g,'d').replace(/x/g,'s').replace(/w/g,'u').replace(/gh/g,'g').replace(/(.)\1+/g,'$1').replace(/h$/,'');
+const phon=s=>plain(s).replace(/[^a-z0-9]/g,'').replace(/ph/g,'f').replace(/th/g,'t').replace(/ch/g,'c').replace(/ck|q|c/g,'k').replace(/[zy]/g,'d').replace(/x/g,'s').replace(/w/g,'u').replace(/gh/g,'g').replace(/(.)\1+/g,'$1');
 /* cách đọc phổ biến (giọng Việt nhận ra) → id tướng */
 const ALIAS={nakroth:['na crốt','na cờ rốt','nacrot','nắc rốt'],yorn:['giọn','dọn','yon','i on'],violet:['vai ô lét','vi ô lét','vai lét'],murad:['mu rát','mu rạt','murát'],
  thane:['then','thên','thên'],zephys:['dê phít','dê phis','zê phi','dephi'],zill:['din','zin','dill'],zata:['da ta','gia ta'],lubo:['lữ bố','lu bố'],ngokhong:['ngộ không'],
  trieuvan:['triệu vân'],dieuthuyen:['điêu thuyền'],ybneth:['i bơ nét','y bê nét','íp nét'],telannas:['te la nát','tela nas','te lan nát'],theflash:['phờ lát','flash','đờ phờ lát'],
  wonderwoman:['wonder woman','quanđơ wu men','oăn đơ'],superman:['siêu nhân','su pơ men'],elandorr:['e lan đo','elan dor'],kilgroth:['kin grốt','kil groth'],krixi:['kri xi','cờ ri xi'],
  kriknak:['kric nắc','krik nak'],krizzix:['kri dích','kri zix'],qi:['ki'],aoi:['a ô i','ao i'],aya:['a da','a ya'],ata:['a ta'],iggy:['ích gi','i gi'],ignis:['ích nít','íc nít'],
- tulen:['tu len','tu lên'],yena:['giê na','ye na','dê na'],yue:['duệ','yu e','du e'],yan:['dan','giang'],xeniel:['xê ni en','xenien'],raz:['rát','ra dờ'],max:['mắc','mác'],
+ tulen:['tu len','tu lên'],yena:['giê na','ye na','dê na'],yue:['duệ','yu e','du e'],yan:['giang','dan kiếm'],xeniel:['xê ni en','xenien'],raz:['ra dờ','rát dờ'],max:['mắc','mác'],
  mina:['mi na'],omen:['ô men'],omega:['ô mê ga'],veres:['vê rét','ve res'],volkath:['vôn cát','vol kát'],wisp:['qui sp','uýt'],wiro:['qui rô','wi rô'],
  grakk:['gờ rắc','grác'],taara:['ta ra'],toro:['tô rô'],arum:['a rum'],alice:['a li xơ','e lít'],lauriel:['lô ri en','lau ri el'],liliana:['li li a na'],lorion:['lo ri on','lô ri ôn'],
  florentino:['flo ren ti nô','phờ lo'],allain:['a lanh','a lain'],airi:['ai ri'],keera:['ki ra'],kaine:['kên','kai ne'],quillen:['qui len','quin len'],hayate:['ha da tê','ha ya tê'],
@@ -32,8 +32,8 @@ function lev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let 
 /* tìm tướng trong một đoạn: khớp chính xác (bỏ dấu/khoảng trắng) trước, sau đó khớp gần đúng theo cụm 1–3 từ */
 function findHero(seg,strict){
   const w=plain(seg).split(/\s+/).filter(Boolean);if(!w.length)return null;
-  const whole=phon(seg);
-  for(const [p,id] of NAMES)if(p.length>=3&&whole.includes(p))return id;
+  const EX=new Map(NAMES.map(x=>[x[0],x[1]]));
+  for(let L=Math.min(4,w.length);L>=1;L--)for(let i=0;i+L<=w.length;i++){const q=phon(w.slice(i,i+L).join(''));if(q.length>=2&&EX.has(q))return EX.get(q)}
   if(strict)return null;
   let best=null;
   for(let L=Math.min(3,w.length);L>=1;L--)for(let i=0;i+L<=w.length;i++){const q=phon(w.slice(i,i+L).join(''));if(q.length<2)continue;
@@ -54,8 +54,14 @@ const STOPW=/\b(doi ban|doi minh|doi thu|ben kia|di rung|ta than|tro thu|ho tro|
 
 /* ---- giọng đọc phản hồi ---- */
 let talk=true;
-function say(t){if(!talk||!window.speechSynthesis)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/<[^>]+>/g,''));u.lang='vi-VN';u.rate=1.1;speechSynthesis.speak(u)}catch(e){}}
-let hideT;function showBar(t,r,stay){bar.hidden=false;vtxt.textContent=t?'Nghe được: “'+t+'”':'';vres.innerHTML=r||'';clearTimeout(hideT);if(!stay&&!on)hideT=setTimeout(()=>bar.hidden=true,6000)}
+let speaking=false;
+function say(t){if(!talk||!window.speechSynthesis||!t)return;
+  try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/<[^>]+>/g,''));u.lang='vi-VN';u.rate=1.15;
+    const done=()=>{if(!speaking)return;speaking=false;if(on&&!IOS)listen()};
+    u.onend=done;u.onerror=done;setTimeout(done,4000); // phòng khi trình duyệt không báo đọc xong
+    speaking=true;try{rec&&rec.abort()}catch(e){}
+    speechSynthesis.speak(u)}catch(e){speaking=false}}
+let hideT,holdUntil=0;function showBar(t,r,stay){if(t)holdUntil=Date.now()+6000;bar.hidden=false;vtxt.textContent=t?'Nghe được: “'+t+'”':'';vres.innerHTML=r||'';clearTimeout(hideT);if(!stay&&!on)hideT=setTimeout(()=>bar.hidden=true,6000)}
 
 /* ---- thực thi câu lệnh ---- */
 function nextBan(side){return st.bans[side].findIndex(b=>!b)}
@@ -79,12 +85,16 @@ function run(raw){
     if(isBan){const x=banList()[n-1];if(!x)return showBar(raw,'Không có gợi ý');const e=doBan(x.h.id,'ally');if(e)return showBar(raw,'⚠️ '+e);say('Đã cấm '+x.h.name);return showBar(raw,`⛔ Đã cấm <b>${x.h.name}</b>`)}
     const lane=laneOf(raw)||st.focus;const x=ranked(lane)[n-1];if(!x)return showBar(raw,'Không có gợi ý');doPick(x.h.id,'ally',lane);say('Đã chọn '+x.h.name+' đường '+LN[lane]);return showBar(raw,`✅ Đã chọn <b>${x.h.name}</b> · đường ${LN[lane]}`)}
   // xem gợi ý một đường
-  if(/^(xem|goi y|mo)\b/.test(t)&&laneOf(raw)&&!findHero(raw.replace(/rung|rong|giua/gi,''))){st.mode='pick';st.focus=laneOf(raw);save();render();
+  if(/^(xem|goi y|mo)\b/.test(t)&&laneOf(raw)&&!findHero(t.replace(STOPW,' '),true)){st.mode='pick';st.focus=laneOf(raw);save();render();
     const x=ranked(st.focus)[0];say(x?`Đường ${LN[st.focus]}, nên chọn ${x.h.name}`:'');return showBar(raw,`👀 Gợi ý đường ${LN[st.focus]}${x?`: nên chọn <b>${x.h.name}</b>`:''}`)}
   /* Lệnh "tự quyết": website tự chọn/cấm tướng tốt nhất thay vì chờ người nói tên.
      VD: "chọn tướng khắc chế Aoi", "pick counter Yena", "chọn giúp tôi đường rừng", "cấm giúp", "pick đi" */
   const AUTO=/\b(khac che|khac|counter|tot nhat|manh nhat|ngon nhat|giup|cho (toi|minh|tao|em|anh)|de xuat|hop nhat|nen chon|nen cam|tu chon|tu cam)\b|\b(pick|chon|cam|ban) di$/;
-  if(AUTO.test(t)&&(/\b(cam|ban|chon|pick|lay)\b/.test(t)||/khac che|counter/.test(t))){
+  const head=t.split(/khac che|counter|\bkhac\b/)[0];
+  const named=findHero(head.replace(STOPW,' ').replace(/\b(giup|cho|toi|minh|tao|em|anh|di|nao|tot nhat|manh nhat)\b/g,' '),true);
+  const loose=named||findHero(head.replace(STOPW,' ').replace(/\b(giup|cho|toi|minh|tao|em|anh|di|nao|tot nhat|manh nhat|danh|tuong)\b/g,' '));
+  const laneOnly=/\b(chon|pick|lay)\b/.test(t)&&laneOf(t)&&!loose; // "chọn tướng đánh rừng", "pick đường giữa"
+  if((AUTO.test(t)||laneOnly)&&!named&&(/\b(cam|ban|chon|pick|lay)\b/.test(t)||/khac che|counter/.test(t))){
     const ct=currentTarget();
     const wantBan=/\b(cam|ban)\b/.test(t)&&!/\b(chon|pick|lay)\b/.test(t);
     if(wantBan){const x=banList()[0];if(!x)return showBar(raw,'Không còn tướng để cấm');const er=doBan(x.h.id,'ally');if(er)return showBar(raw,'⚠️ '+er);
@@ -112,7 +122,8 @@ function run(raw){
     const h=BY[id];if(used().has(id)){errs.push(`${h.name} đã được cấm/chọn rồi`);continue}
     const lane=laneOf(part);
     let kind=isBan?'ban':isPick?'pick':null,sd=side;
-    if(!kind||!sd){const ct=currentTarget();kind=kind||(ct?ct.kind:'pick');sd=sd||(ct&&ct.kind===kind?ct.side:'ally')}
+    if(!kind){const ct=currentTarget();kind=ct?ct.kind:'pick';sd=sd||(ct?ct.side:'ally')}
+    sd=sd||'ally';
     const e=kind==='ban'?doBan(id,sd):doPick(id,sd,lane);
     if(e)errs.push(e);else done.push(`${kind==='ban'?'⛔ Cấm':'✅ Chọn'} <b>${h.name}</b> (${sd==='ally'?'đội bạn':'đối thủ'}${kind==='pick'&&lane?' · '+LN[lane]:''})`);
   }
@@ -124,8 +135,9 @@ function run(raw){
     return showBar(raw,done.join('<br>')+(errs.length?'<br>⚠️ '+errs.join('; '):'')+(tail?`<br>💡 ${tail}`:''));
   }
   if(errs.length)return showBar(raw,'⚠️ '+[...new Set(errs.map(e=>e.replace(/ \(vd.*\)/,'')))].join('; '));
+  if(!isBan&&!isPick)return showBar(raw,'<span class="vdots">(không có lệnh — bỏ qua)</span>'); // nói chuyện bình thường thì không làm gì
   const near=nearest(raw);
-  if(near.length){const ct=currentTarget();const kind=isBan?'ban':isPick?'pick':(ct?ct.kind:'pick');const sd=side||(ct&&ct.kind===kind?ct.side:'ally');
+  if(near.length){const ct=currentTarget();const kind=isBan?'ban':isPick?'pick':(ct?ct.kind:'pick');const sd=side||((isBan||isPick)?'ally':(ct?ct.side:'ally'));
     pending={kind,side:sd,lane:laneOf(raw)};say('Bạn muốn tướng nào?');
     return showBar(raw,`❓ Chưa chắc tên tướng — bấm để ${kind==='ban'?'cấm':'chọn'} (${sd==='ally'?'đội bạn':'đối thủ'}):<div class="vnear">${near.map(id=>`<button data-vpick="${id}">${pic(BY[id])}<span>${BY[id].name}</span></button>`).join('')}</div>`,true)}
   showBar(raw,'❓ Chưa nghe ra tên tướng. Nói chậm và rõ tên tướng, ví dụ: <i>“cấm Tulen”</i>, <i>“địch chọn Yena”</i>, <i>“chọn Aoi đi rừng”</i>.',true);
@@ -143,10 +155,10 @@ async function askMic(){
 }
 function start(){
   rec=new SR();rec.lang='vi-VN';rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=3;
-  rec.onaudiostart=()=>{gotAudio=true;fails=0;showBar('',`🎙️ <b>Đang nghe…</b> ${IOS?'nói 1 câu lệnh':'cứ nói, chữ nghe được sẽ hiện ở đây'} — vd <i>“cấm Tulen”</i>, <i>“địch chọn Yena”</i>`,true)};
-  rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];
+  rec.onaudiostart=()=>{gotAudio=true;fails=0;if(Date.now()<holdUntil)return;showBar('',`🎙️ <b>Đang nghe…</b> ${IOS?'nói 1 câu lệnh':'cứ nói, chữ nghe được sẽ hiện ở đây'} — vd <i>“cấm Tulen”</i>, <i>“địch chọn Yena”</i>`,true)};
+  rec.onresult=e=>{if(speaking)return;for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];
     if(r.isFinal){heard=true;let alt=r[0].transcript;for(let a=0;a<r.length;a++)if(findHero(r[a].transcript)){alt=r[a].transcript;break}
-      run(alt)}else{lastInterim=r[0].transcript;showBar(r[0].transcript,'<span class="vdots">Đang nghe…</span>',true)}}};
+      run(alt)}else{lastInterim=r[0].transcript;holdUntil=0;showBar(r[0].transcript,'<span class="vdots">Đang nghe…</span>',true)}}};
   rec.onerror=e=>{
     const M={'not-allowed':INFRAME?'⚠️ Micro bị chặn vì trang đang chạy trong khung Claude. Mở bản web riêng (link Cloudflare) để dùng giọng nói — hoặc gõ lệnh vào ô bên dưới.':'⚠️ Micro bị chặn. Bấm 🔒 cạnh thanh địa chỉ → Micro → Cho phép.',
       'service-not-allowed':'⚠️ Trình duyệt không cho dùng dịch vụ nhận giọng nói. Thử Chrome (Android/máy tính) hoặc Safari (iPhone, bật Siri & Đọc chính tả trong Cài đặt).',
@@ -158,13 +170,14 @@ function start(){
   rec.onend=()=>{/* một số máy không trả kết quả cuối — dùng chữ tạm cuối cùng */
     if(!heard&&lastInterim){const t=lastInterim;lastInterim='';run(t)}heard=false;lastInterim='';
     if(!on)return;if(IOS){stop();return}
+    if(speaking)return; // đang đọc phản hồi: đọc xong sẽ tự nghe lại
     if(!gotAudio&&++fails>3){stop();showBar('','⚠️ Mic không thu được tiếng. Kiểm tra quyền micro của trình duyệt rồi thử lại, hoặc gõ lệnh vào ô bên dưới.',true);return}
-    setTimeout(()=>{if(on)try{gotAudio=false;rec.start()}catch(e){}},250)};
-  try{rec.start();on=true;btn.classList.add('on');showBar('','⏳ Đang bật micro…',true)}catch(e){showBar('','⚠️ Không mở được mic: '+e.message,true)}
+    setTimeout(listen,250)};
+  on=true;btn.classList.add('on');showBar('','⏳ Đang bật micro…',true);
+  try{rec.start()}catch(e){on=false;btn.classList.remove('on');showBar('','⚠️ Không mở được mic: '+e.message,true)}
 }
-async function toggle(){if(on){stop();return}
-  if(INFRAME&&!IOS){/* trong khung nhúng vẫn thử, lỗi sẽ được báo rõ */}
-  if(await askMic())start()}
+function listen(){if(!on||speaking||!rec)return;try{gotAudio=false;rec.start()}catch(e){}}
+function toggle(){if(on){stop();return}start()}
 function stop(){on=false;btn.classList.remove('on');try{rec&&rec.abort()}catch(e){}}
 /* gõ lệnh bằng chữ (dự phòng khi mic bị chặn, hoặc muốn ra lệnh nhanh) */
 const vin=document.getElementById('vin');
