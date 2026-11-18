@@ -81,6 +81,27 @@ function run(raw){
   // xem gợi ý một đường
   if(/^(xem|goi y|mo)\b/.test(t)&&laneOf(raw)&&!findHero(raw.replace(/rung|rong|giua/gi,''))){st.mode='pick';st.focus=laneOf(raw);save();render();
     const x=ranked(st.focus)[0];say(x?`Đường ${LN[st.focus]}, nên chọn ${x.h.name}`:'');return showBar(raw,`👀 Gợi ý đường ${LN[st.focus]}${x?`: nên chọn <b>${x.h.name}</b>`:''}`)}
+  /* Lệnh "tự quyết": website tự chọn/cấm tướng tốt nhất thay vì chờ người nói tên.
+     VD: "chọn tướng khắc chế Aoi", "pick counter Yena", "chọn giúp tôi đường rừng", "cấm giúp", "pick đi" */
+  const AUTO=/\b(khac che|khac|counter|tot nhat|manh nhat|ngon nhat|giup|cho (toi|minh|tao|em|anh)|de xuat|hop nhat|nen chon|nen cam|tu chon|tu cam)\b|\b(pick|chon|cam|ban) di$/;
+  if(AUTO.test(t)&&(/\b(cam|ban|chon|pick|lay)\b/.test(t)||/khac che|counter/.test(t))){
+    const ct=currentTarget();
+    const wantBan=/\b(cam|ban)\b/.test(t)&&!/\b(chon|pick|lay)\b/.test(t);
+    if(wantBan){const x=banList()[0];if(!x)return showBar(raw,'Không còn tướng để cấm');const er=doBan(x.h.id,'ally');if(er)return showBar(raw,'⚠️ '+er);
+      say('Cấm '+x.h.name);return showBar(raw,`⛔ Đã cấm <b>${x.h.name}</b> (đội bạn)`)}
+    // tướng đối thủ được nhắc tới (sau chữ "khắc chế/counter") → chọn ở đúng đường của tướng đó
+    const tail=(t.split(/khac che|counter|khac/)[1]||'');const eid=tail?findHero(tail.replace(STOPW,' ')):null;
+    const eLane=eid?LK.find(k=>st.enemy[k]===eid):null;
+    let lane=laneOf(raw.replace(/khắc chế|counter/gi,''))||eLane||(st.ally[st.focus]?LK.find(k=>!st.ally[k]):st.focus);
+    if(!lane)return showBar(raw,'⚠️ Đội bạn đã đủ 5 tướng');
+    if(eid&&!eLane&&!used().has(eid)){/* tướng chưa có trong đội địch: vẫn ưu tiên tướng khắc nó */}
+    let list=ranked(lane);
+    if(eid&&!eLane){const E=BY[eid];list=list.map(x=>({...x,s:x.s+matchup(x.h,E).s*1.5})).sort((a,b)=>b.s-a.s)}
+    const x=list[0];if(!x)return showBar(raw,'Không có tướng phù hợp');
+    st.focus=lane;doPick(x.h.id,'ally',lane);
+    say('Chọn '+x.h.name);
+    return showBar(raw,`✅ Đã chọn <b>${x.h.name}</b> · đường ${LN[lane]}${eid?` (khắc ${BY[eid].name})`:''}`);
+  }
   // cấm / chọn tướng (có thể nhiều tướng: "địch chọn yena và aoi")
   const isBan=/\b(cam|ban)\b/.test(t),isPick=/\b(chon|pick|lay)\b/.test(t);
   let side=ENEMY.test(t)?'enemy':(/\b(minh|doi minh)\b/.test(t)?'ally':null);
@@ -99,7 +120,7 @@ function run(raw){
     let tail='';
     const sp=step();
     if(sp&&sp.side==='ally'){if(sp.kind==='ban'){const b=banList()[0];if(b)tail=`Nên cấm ${b.h.name}`}else{const x=ranked(st.focus)[0];if(x)tail=`Gợi ý đường ${LN[st.focus]}: ${x.h.name}`}}
-    say(done.map(d=>d.replace(/<[^>]+>/g,'').replace(/[⛔✅]\s*/,'').replace(/\(.*\)/,'')).join(', ')+(tail?'. '+tail:''));
+    say(done.map(d=>d.replace(/<[^>]+>/g,'').replace(/[⛔✅]\s*/,'').replace(/\(.*\)/,'')).join(', '));
     return showBar(raw,done.join('<br>')+(errs.length?'<br>⚠️ '+errs.join('; '):'')+(tail?`<br>💡 ${tail}`:''));
   }
   if(errs.length)return showBar(raw,'⚠️ '+[...new Set(errs.map(e=>e.replace(/ \(vd.*\)/,'')))].join('; '));
