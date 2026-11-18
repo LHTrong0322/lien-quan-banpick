@@ -1,0 +1,9 @@
+{
+  // Worker phục vụ trang ban-pick + API góp ý. Agent build by @Trong0322
+  "name": "lien-quan-banpick",
+  "main": "src/contrib.js",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": ".", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
+  // Kho lưu góp ý chung. Không ghi id: Cloudflare tự tạo kho KV ở lần deploy đầu.
+  "kv_namespaces": [{ "binding": "CONTRIB" }]
+}

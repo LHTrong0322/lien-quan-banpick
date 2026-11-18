@@ -38,5 +38,5 @@ Chạy tốt trên Chrome/Edge (máy tính, Android) và Safari (iPhone). Firefo
 Tab **💬 Góp ý**: gửi kèo khắc chế, cặp bài hoặc cả bài đánh 5 tướng, kèm cách đánh. Người khác bấm 👍/👎.
 Góp ý có nhiều 👍 được cộng điểm khi gợi ý pick (tối đa ngang một kèo khắc chế mạnh); bị 👎 từ 3 trở lên thì bị ẩn và bỏ qua.
 
-Lưu chung cần **Cloudflare KV**: tạo KV namespace, rồi trong dự án Pages → Settings → Bindings → thêm KV namespace với tên biến `CONTRIB`, sau đó deploy lại.
-Chưa gắn KV thì trang tự chuyển sang lưu trên máy người dùng.
+Lưu chung bằng **Cloudflare KV**: khai báo sẵn trong `wrangler.jsonc` (binding `CONTRIB`), Cloudflare tự tạo kho ở lần deploy đầu. Code máy chủ nằm ở `src/contrib.js`.
+Nếu kho chưa sẵn sàng, trang tự chuyển sang lưu trên máy người dùng.

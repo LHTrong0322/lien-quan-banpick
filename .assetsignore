@@ -1,0 +1,11 @@
+.git/
+.github/
+src/
+tools/
+data_pro/
+node_modules/
+**/__pycache__/
+wrangler.jsonc
+README.md
+.gitignore
+.assetsignore

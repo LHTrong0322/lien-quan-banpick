@@ -19,14 +19,14 @@ async function limited(env, ip, kind, max) {
   return false;
 }
 
-export async function onRequestGet({ env }) {
+async function onGet(env) {
   if (!env.CONTRIB) return J({ error: 'nokv' }, 503);
   const items = await load(env);
   // không trả danh sách người bình chọn ra ngoài
   return J({ items: items.filter(x => x.up - x.down > -3).map(({ voters, ...x }) => x) });
 }
 
-export async function onRequestPost({ request, env }) {
+async function onPost(request, env) {
   if (!env.CONTRIB) return J({ error: 'nokv' }, 503);
   let b; try { b = await request.json(); } catch { return J({ error: 'bad json' }, 400); }
   const ip = request.headers.get('cf-connecting-ip') || 'x';
@@ -70,3 +70,18 @@ export async function onRequestPost({ request, env }) {
   }
   return J({ error: 'unknown action' }, 400);
 }
+
+/* Worker chính: /api/contrib do code xử lý, còn lại trả file tĩnh (index.html, app.js, ảnh…) */
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    if (url.pathname === '/api/contrib') {
+      try {
+        if (request.method === 'GET') return await onGet(env);
+        if (request.method === 'POST') return await onPost(request, env);
+        return J({ error: 'method' }, 405);
+      } catch (e) { return J({ error: 'Lỗi máy chủ: ' + e.message }, 500); }
+    }
+    return env.ASSETS.fetch(request);
+  }
+};
