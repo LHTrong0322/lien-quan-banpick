@@ -57,7 +57,7 @@ let talk=true;
 let speaking=false;
 function say(t){if(!talk||!window.speechSynthesis||!t)return;
   try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/<[^>]+>/g,''));u.lang='vi-VN';u.rate=1.15;
-    const done=()=>{if(!speaking)return;speaking=false;if(on&&!IOS)listen()};
+    const done=()=>{if(!speaking)return;speaking=false;if(on)listen()};
     u.onend=done;u.onerror=done;setTimeout(done,4000); // phòng khi trình duyệt không báo đọc xong
     speaking=true;try{rec&&rec.abort()}catch(e){}
     speechSynthesis.speak(u)}catch(e){speaking=false}}
@@ -144,46 +144,57 @@ function run(raw){
 }
 
 /* ---- nghe giọng nói ----
-   Chrome/Edge: nghe liên tục tới khi tắt. Safari/iPhone: bấm 1 lần nghe 1 câu (Safari không cho nghe liên tục). */
-const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Safari/.test(navigator.userAgent)&&!/Chrome|CriOS|Edg|Android/.test(navigator.userAgent));
+   Bấm 🎙️ một lần: mic mở và GIỮ MỞ cho tới khi bấm lại (hoặc 2 phút không nói gì).
+   Trình duyệt hay tự ngắt sau vài giây im lặng — web tự mở lại ngay, người dùng không phải bấm lại.
+   Giữ nút 🎙️ (nhấn lâu): nghe trong lúc giữ, thả tay là xử lý câu vừa nói. */
+const UA=navigator.userAgent;
+const IOS=/iPad|iPhone|iPod/.test(UA)||(/Safari/.test(UA)&&!/Chrome|CriOS|Edg|Android/.test(UA));
+const ANDROID=/Android/.test(UA);
 const INFRAME=(()=>{try{return window.self!==window.top}catch(e){return true}})();
-let rec=null,on=false,gotAudio=false,fails=0,heard=false,lastInterim='';
-async function askMic(){
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return true;
-  try{const s=await navigator.mediaDevices.getUserMedia({audio:true});s.getTracks().forEach(t=>t.stop());return true}
-  catch(e){stop();showBar('',INFRAME?'⚠️ Trang đang chạy bên trong khung Claude nên <b>micro bị chặn</b>. Hãy mở bản web riêng của platform (link Cloudflare) bằng Chrome hoặc Safari để dùng giọng nói. Trong lúc này bạn có thể gõ lệnh vào ô bên dưới.':'⚠️ Chưa được phép dùng micro. Bấm biểu tượng 🔒 / ⓘ cạnh thanh địa chỉ → Micro → <b>Cho phép</b>, rồi bấm lại nút 🎙️.',true);return false}
+let rec=null,on=false,heard=false,lastInterim='',lastFinal='',lastFinalAt=0,idleAt=0,restartFails=0;
+const vlog=document.getElementById('vlog');const LOG=[];
+function log(x){LOG.push(x);if(LOG.length>6)LOG.shift();if(vlog)vlog.textContent='mic: '+LOG.join(' → ')}
+const ERR={'not-allowed':INFRAME?'⚠️ Micro bị chặn vì trang đang chạy trong khung Claude. Mở link workers.dev bằng Chrome để dùng giọng nói — hoặc gõ lệnh vào ô bên dưới.':'⚠️ Trình duyệt đang chặn micro. Bấm biểu tượng 🔒 (hoặc ⓘ) cạnh thanh địa chỉ → Micro → <b>Cho phép</b>, tải lại trang rồi bấm 🎙️.',
+  'service-not-allowed':'⚠️ Trình duyệt không cho dùng dịch vụ nhận giọng nói. Trên iPhone: Cài đặt → Siri → bật <b>Đọc chính tả</b>. Hoặc dùng Chrome.',
+  'audio-capture':'⚠️ Không tìm thấy micro, hoặc micro đang bị ứng dụng khác dùng (Zalo, Messenger, game…). Tắt ứng dụng đó rồi thử lại.',
+  'network':'⚠️ Nhận giọng nói cần Internet (Chrome gửi tiếng nói lên máy chủ Google để chuyển thành chữ). Kiểm tra mạng rồi bấm lại 🎙️.',
+  'language-not-supported':'⚠️ Trình duyệt chưa hỗ trợ nhận tiếng Việt.'};
+function makeRec(){
+  const r=new SR();r.lang='vi-VN';r.continuous=!(IOS||ANDROID);r.interimResults=true;r.maxAlternatives=3;
+  r.onstart=()=>log('mở');
+  r.onaudiostart=()=>{restartFails=0;log('thu âm');if(Date.now()>holdUntil)showBar('',`🎙️ <b>Đang nghe — cứ nói</b> (mic giữ mở tới khi bấm lại 🎙️). VD <i>“cấm Tulen”</i>, <i>“chọn tướng khắc chế Aoi”</i>`,true)};
+  r.onspeechstart=()=>log('có tiếng');
+  r.onresult=e=>{if(speaking)return;idleAt=Date.now();
+    for(let i=e.resultIndex;i<e.results.length;i++){const x=e.results[i];
+      if(x.isFinal){heard=true;lastInterim='';let alt=x[0].transcript;for(let a=0;a<x.length;a++)if(findHero(x[a].transcript)){alt=x[a].transcript;break}
+        const k=plain(alt).trim();if(k===lastFinal&&Date.now()-lastFinalAt<3000)continue; // Android hay trả trùng câu
+        lastFinal=k;lastFinalAt=Date.now();log('chốt câu');run(alt)}
+      else{lastInterim=x[0].transcript;holdUntil=0;showBar(x[0].transcript,'<span class="vdots">Đang nghe…</span>',true)}}};
+  r.onerror=e=>{log('lỗi '+e.error);
+    if(e.error==='no-speech'||e.error==='aborted')return; // im lặng: tự mở lại ở onend
+    if(ERR[e.error]){on=false;btn.classList.remove('on');showBar('',ERR[e.error],true)}};
+  r.onend=()=>{log('ngắt');
+    if(!heard&&lastInterim){const t=lastInterim;lastInterim='';run(t)}heard=false;
+    if(!on||speaking)return;
+    if(Date.now()-idleAt>120000){stop();showBar('','🎙️ Đã tự tắt mic sau 2 phút không nói. Bấm 🎙️ để bật lại.');return}
+    setTimeout(listen,200)};
+  return r;
 }
-function start(){
-  rec=new SR();rec.lang='vi-VN';rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=3;
-  rec.onaudiostart=()=>{gotAudio=true;fails=0;if(Date.now()<holdUntil)return;showBar('',`🎙️ <b>Đang nghe…</b> ${IOS?'nói 1 câu lệnh':'cứ nói, chữ nghe được sẽ hiện ở đây'} — vd <i>“cấm Tulen”</i>, <i>“địch chọn Yena”</i>`,true)};
-  rec.onresult=e=>{if(speaking)return;for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];
-    if(r.isFinal){heard=true;let alt=r[0].transcript;for(let a=0;a<r.length;a++)if(findHero(r[a].transcript)){alt=r[a].transcript;break}
-      run(alt)}else{lastInterim=r[0].transcript;holdUntil=0;showBar(r[0].transcript,'<span class="vdots">Đang nghe…</span>',true)}}};
-  rec.onerror=e=>{
-    const M={'not-allowed':INFRAME?'⚠️ Micro bị chặn vì trang đang chạy trong khung Claude. Mở bản web riêng (link Cloudflare) để dùng giọng nói — hoặc gõ lệnh vào ô bên dưới.':'⚠️ Micro bị chặn. Bấm 🔒 cạnh thanh địa chỉ → Micro → Cho phép.',
-      'service-not-allowed':'⚠️ Trình duyệt không cho dùng dịch vụ nhận giọng nói. Thử Chrome (Android/máy tính) hoặc Safari (iPhone, bật Siri & Đọc chính tả trong Cài đặt).',
-      'audio-capture':'⚠️ Không tìm thấy micro trên máy.',
-      'network':'⚠️ Nhận giọng nói cần Internet (Chrome gửi tiếng nói lên máy chủ Google để chuyển thành chữ). Kiểm tra mạng rồi bấm lại 🎙️.',
-      'language-not-supported':'⚠️ Trình duyệt chưa hỗ trợ nhận tiếng Việt.'};
-    if(e.error==='no-speech'||e.error==='aborted'){if(IOS){stop();showBar('','🤫 Chưa nghe thấy gì — bấm 🎙️ rồi nói lại nhé.')}return}
-    stop();showBar('',(M[e.error]||'⚠️ Lỗi nhận giọng nói: '+e.error)+'',true)};
-  rec.onend=()=>{/* một số máy không trả kết quả cuối — dùng chữ tạm cuối cùng */
-    if(!heard&&lastInterim){const t=lastInterim;lastInterim='';run(t)}heard=false;lastInterim='';
-    if(!on)return;if(IOS){stop();return}
-    if(speaking)return; // đang đọc phản hồi: đọc xong sẽ tự nghe lại
-    if(!gotAudio&&++fails>3){stop();showBar('','⚠️ Mic không thu được tiếng. Kiểm tra quyền micro của trình duyệt rồi thử lại, hoặc gõ lệnh vào ô bên dưới.',true);return}
-    setTimeout(listen,250)};
-  on=true;btn.classList.add('on');showBar('','⏳ Đang bật micro…',true);
-  try{rec.start()}catch(e){on=false;btn.classList.remove('on');showBar('','⚠️ Không mở được mic: '+e.message,true)}
-}
-function listen(){if(!on||speaking||!rec)return;try{gotAudio=false;rec.start()}catch(e){}}
-function toggle(){if(on){stop();return}start()}
-function stop(){on=false;btn.classList.remove('on');try{rec&&rec.abort()}catch(e){}}
+function listen(){if(!on||speaking)return;
+  try{rec=makeRec();rec.start()}
+  catch(e){log('không mở lại được');if(++restartFails>4){on=false;btn.classList.remove('on');showBar('','🎙️ Trình duyệt không cho tự mở lại mic. Bấm 🎙️ mỗi lần muốn nói nhé.',true)}else setTimeout(listen,600)}}
+function start(){on=true;idleAt=Date.now();restartFails=0;btn.classList.add('on');holdUntil=0;
+  showBar('','⏳ Đang mở micro… (lần đầu trình duyệt sẽ hỏi quyền, bấm <b>Cho phép</b>)',true);
+  try{rec=makeRec();rec.start()}catch(e){on=false;btn.classList.remove('on');showBar('','⚠️ Không mở được mic: '+e.message,true)}}
+function stop(){on=false;btn.classList.remove('on');try{rec&&rec.stop()}catch(e){}log('tắt')}
+/* bấm = bật/tắt (dùng sự kiện click: điện thoại chỉ cho mở mic trong lần bấm thật) */
+function toggle(){if(on){stop();showBar('','🎙️ Đã tắt mic');return}start()}
+if(!NOSR)btn.onclick=toggle;
 /* gõ lệnh bằng chữ (dự phòng khi mic bị chặn, hoặc muốn ra lệnh nhanh) */
 const vin=document.getElementById('vin');
 if(NOSR){btn.classList.add('na');btn.onclick=()=>showBar('','⚠️ Trình duyệt này chưa hỗ trợ nhận giọng nói (vd Firefox). Mở bằng Chrome, Edge hoặc Safari — hoặc gõ lệnh vào ô bên dưới.',true)}
 if(vin)vin.addEventListener('keydown',e=>{if(e.key==='Enter'&&vin.value.trim()){run(vin.value.trim());vin.value=''}});
-if(!NOSR)btn.onclick=toggle;
+
 document.addEventListener('click',e=>{const b=e.target.closest('[data-vpick]');if(!b||!pending)return;const id=b.dataset.vpick,h=BY[id];
   if(used().has(id))return showBar('',`⚠️ ${h.name} đã được cấm/chọn rồi`);
   const pk=pending;pending=null;const er=pk.kind==='ban'?doBan(id,pk.side):doPick(id,pk.side,pk.lane);

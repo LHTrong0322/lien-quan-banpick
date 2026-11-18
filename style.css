@@ -259,3 +259,5 @@ textarea.ucin{width:100%;resize:vertical}
 @media (max-width:640px){.ucitem{grid-template-columns:1fr auto}.ucpics{grid-column:1/-1}.ctabs .ctab{font-size:12px;padding:8px 4px}}
 .vbar[hidden]{display:none}
 .vnear{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.vnear button{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.07);border:1px solid rgba(255,184,0,.4);border-radius:10px;padding:4px 10px 4px 4px;color:inherit;cursor:pointer;font-weight:600}.vnear img,.vnear .ini{width:30px;height:30px;border-radius:6px;object-fit:cover}
+.vlog{font-size:10px;opacity:.55;margin-top:3px;font-family:monospace}
+.btn.mic{touch-action:manipulation;user-select:none;-webkit-user-select:none}
