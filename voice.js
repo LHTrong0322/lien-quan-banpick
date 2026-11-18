@@ -40,6 +40,13 @@ function findHero(seg,strict){
     for(const [p,id] of NAMES){const d=lev(q,p),tol=p.length<=4?0:p.length<=7?1:2;if(d<=tol&&(!best||d<best.d))best={d,id}}}
   return best&&best.id;
 }
+function nearest(seg,k=4){
+  const w=plain(seg).replace(STOPW,' ').split(/\s+/).filter(x=>x.length>0);const best={};
+  for(let L=1;L<=Math.min(3,w.length);L++)for(let i=0;i+L<=w.length;i++){const q=phon(w.slice(i,i+L).join(''));if(q.length<2)continue;
+    for(const [p,id] of NAMES){const d=lev(q,p)/Math.max(p.length,q.length);if(d<=.6&&(best[id]==null||d<best[id]))best[id]=d}}
+  return Object.entries(best).sort((a,b)=>a[1]-b[1]).slice(0,k).map(x=>x[0]);
+}
+let pending=null;
 const LANEW=[['T',/ta than|top|duong tren|dau si/],['J',/rung|jungle|di rung/],['M',/giua|mid|phap su/],['A',/rong|xa thu|duong duoi|bot|ad\b|adc/],['S',/tro thu|ho tro|support|sp\b/]];
 const laneOf=s=>{const p=plain(s);for(const [k,r] of LANEW)if(r.test(p))return k;return null};
 const ENEMY=/\b(dich|doi thu|ben kia|doi do|team dich|phe do)\b/;
@@ -96,25 +103,29 @@ function run(raw){
     return showBar(raw,done.join('<br>')+(errs.length?'<br>⚠️ '+errs.join('; '):'')+(tail?`<br>💡 ${tail}`:''));
   }
   if(errs.length)return showBar(raw,'⚠️ '+[...new Set(errs.map(e=>e.replace(/ \(vd.*\)/,'')))].join('; '));
-  showBar(raw,'❓ Chưa hiểu tên tướng. Thử nói rõ hơn, ví dụ: <i>“cấm Tulen”</i>, <i>“địch chọn Yena”</i>, <i>“chọn Aoi đi rừng”</i>.');
+  const near=nearest(raw);
+  if(near.length){const ct=currentTarget();const kind=isBan?'ban':isPick?'pick':(ct?ct.kind:'pick');const sd=side||(ct&&ct.kind===kind?ct.side:'ally');
+    pending={kind,side:sd,lane:laneOf(raw)};say('Bạn muốn tướng nào?');
+    return showBar(raw,`❓ Chưa chắc tên tướng — bấm để ${kind==='ban'?'cấm':'chọn'} (${sd==='ally'?'đội bạn':'đối thủ'}):<div class="vnear">${near.map(id=>`<button data-vpick="${id}">${pic(BY[id])}<span>${BY[id].name}</span></button>`).join('')}</div>`,true)}
+  showBar(raw,'❓ Chưa nghe ra tên tướng. Nói chậm và rõ tên tướng, ví dụ: <i>“cấm Tulen”</i>, <i>“địch chọn Yena”</i>, <i>“chọn Aoi đi rừng”</i>.',true);
 }
 
 /* ---- nghe giọng nói ----
    Chrome/Edge: nghe liên tục tới khi tắt. Safari/iPhone: bấm 1 lần nghe 1 câu (Safari không cho nghe liên tục). */
 const IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(/Safari/.test(navigator.userAgent)&&!/Chrome|CriOS|Edg|Android/.test(navigator.userAgent));
 const INFRAME=(()=>{try{return window.self!==window.top}catch(e){return true}})();
-let rec=null,on=false,gotAudio=false,fails=0;
+let rec=null,on=false,gotAudio=false,fails=0,heard=false,lastInterim='';
 async function askMic(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return true;
   try{const s=await navigator.mediaDevices.getUserMedia({audio:true});s.getTracks().forEach(t=>t.stop());return true}
   catch(e){stop();showBar('',INFRAME?'⚠️ Trang đang chạy bên trong khung Claude nên <b>micro bị chặn</b>. Hãy mở bản web riêng của platform (link Cloudflare) bằng Chrome hoặc Safari để dùng giọng nói. Trong lúc này bạn có thể gõ lệnh vào ô bên dưới.':'⚠️ Chưa được phép dùng micro. Bấm biểu tượng 🔒 / ⓘ cạnh thanh địa chỉ → Micro → <b>Cho phép</b>, rồi bấm lại nút 🎙️.',true);return false}
 }
 function start(){
-  rec=new SR();rec.lang='vi-VN';rec.continuous=!IOS;rec.interimResults=true;rec.maxAlternatives=3;
+  rec=new SR();rec.lang='vi-VN';rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=3;
   rec.onaudiostart=()=>{gotAudio=true;fails=0;showBar('',`🎙️ <b>Đang nghe…</b> ${IOS?'nói 1 câu lệnh':'cứ nói, chữ nghe được sẽ hiện ở đây'} — vd <i>“cấm Tulen”</i>, <i>“địch chọn Yena”</i>`,true)};
   rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){const r=e.results[i];
-    if(r.isFinal){let alt=r[0].transcript;for(let a=0;a<r.length;a++)if(findHero(r[a].transcript)){alt=r[a].transcript;break}
-      run(alt)}else showBar(r[0].transcript,'<span class="vdots">Đang nghe…</span>',true)}};
+    if(r.isFinal){heard=true;let alt=r[0].transcript;for(let a=0;a<r.length;a++)if(findHero(r[a].transcript)){alt=r[a].transcript;break}
+      run(alt)}else{lastInterim=r[0].transcript;showBar(r[0].transcript,'<span class="vdots">Đang nghe…</span>',true)}}};
   rec.onerror=e=>{
     const M={'not-allowed':INFRAME?'⚠️ Micro bị chặn vì trang đang chạy trong khung Claude. Mở bản web riêng (link Cloudflare) để dùng giọng nói — hoặc gõ lệnh vào ô bên dưới.':'⚠️ Micro bị chặn. Bấm 🔒 cạnh thanh địa chỉ → Micro → Cho phép.',
       'service-not-allowed':'⚠️ Trình duyệt không cho dùng dịch vụ nhận giọng nói. Thử Chrome (Android/máy tính) hoặc Safari (iPhone, bật Siri & Đọc chính tả trong Cài đặt).',
@@ -123,7 +134,9 @@ function start(){
       'language-not-supported':'⚠️ Trình duyệt chưa hỗ trợ nhận tiếng Việt.'};
     if(e.error==='no-speech'||e.error==='aborted'){if(IOS){stop();showBar('','🤫 Chưa nghe thấy gì — bấm 🎙️ rồi nói lại nhé.')}return}
     stop();showBar('',(M[e.error]||'⚠️ Lỗi nhận giọng nói: '+e.error)+'',true)};
-  rec.onend=()=>{if(!on)return;if(IOS){stop();return}
+  rec.onend=()=>{/* một số máy không trả kết quả cuối — dùng chữ tạm cuối cùng */
+    if(!heard&&lastInterim){const t=lastInterim;lastInterim='';run(t)}heard=false;lastInterim='';
+    if(!on)return;if(IOS){stop();return}
     if(!gotAudio&&++fails>3){stop();showBar('','⚠️ Mic không thu được tiếng. Kiểm tra quyền micro của trình duyệt rồi thử lại, hoặc gõ lệnh vào ô bên dưới.',true);return}
     setTimeout(()=>{if(on)try{gotAudio=false;rec.start()}catch(e){}},250)};
   try{rec.start();on=true;btn.classList.add('on');showBar('','⏳ Đang bật micro…',true)}catch(e){showBar('','⚠️ Không mở được mic: '+e.message,true)}
@@ -137,6 +150,10 @@ const vin=document.getElementById('vin');
 if(NOSR){btn.classList.add('na');btn.onclick=()=>showBar('','⚠️ Trình duyệt này chưa hỗ trợ nhận giọng nói (vd Firefox). Mở bằng Chrome, Edge hoặc Safari — hoặc gõ lệnh vào ô bên dưới.',true)}
 if(vin)vin.addEventListener('keydown',e=>{if(e.key==='Enter'&&vin.value.trim()){run(vin.value.trim());vin.value=''}});
 if(!NOSR)btn.onclick=toggle;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-vpick]');if(!b||!pending)return;const id=b.dataset.vpick,h=BY[id];
+  if(used().has(id))return showBar('',`⚠️ ${h.name} đã được cấm/chọn rồi`);
+  const pk=pending;pending=null;const er=pk.kind==='ban'?doBan(id,pk.side):doPick(id,pk.side,pk.lane);
+  if(er)return showBar('','⚠️ '+er);say((pk.kind==='ban'?'Đã cấm ':'Đã chọn ')+h.name);showBar('',`${pk.kind==='ban'?'⛔ Đã cấm':'✅ Đã chọn'} <b>${h.name}</b> (${pk.side==='ally'?'đội bạn':'đối thủ'})`)});
 document.getElementById('vclose').onclick=()=>{if(on)stop();bar.hidden=true};
 document.getElementById('vhelp').onclick=()=>showBar('',`<b>Câu lệnh mẫu</b><br>
   ⛔ “cấm Tulen” · “địch cấm Yena” · “cấm theo gợi ý”<br>
