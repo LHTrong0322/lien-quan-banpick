@@ -83,7 +83,7 @@ async function onStt(request, env) {
   const buf = await request.arrayBuffer();
   if (buf.byteLength < 2000) return J({ text: '' });
   if (buf.byteLength > 1500000) return J({ error: 'Đoạn ghi âm quá dài' }, 413);
-  const r = await env.AI.run('@cf/openai/whisper-large-v3-turbo', { audio: b64(buf), language: 'vi', task: 'transcribe', vad_filter: true, initial_prompt: STT_PROMPT });
+  const r = await env.AI.run('@cf/openai/whisper-large-v3-turbo', { audio: b64(buf), language: 'vi', task: 'transcribe', initial_prompt: STT_PROMPT });
   return J({ text: (r && r.text || '').trim() });
 }
 
@@ -108,14 +108,14 @@ async function onIntent(request, env) {
   let b; try { b = await request.json(); } catch { return J({ error: 'bad json' }, 400); }
   const text = String(b.text || '').slice(0, 200), names = (b.heroes || []).map(x => String(x).slice(0, 30)).slice(0, 200);
   if (!text.trim()) return J({ action: 'none' });
-  const r = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
+  const r = await env.AI.run('@cf/meta/llama-3.1-8b-instruct-fast', {
     messages: [
       { role: 'system', content: INTENT_SYS + '\nDanh sách tướng: ' + names.join(', ') },
       { role: 'user', content: 'cấm na crốt' }, { role: 'assistant', content: '{"action":"ban","side":"ally","heroes":["Nakroth"],"lane":null,"counter":null}' },
       { role: 'user', content: 'bên kia lấy con giọn với thên' }, { role: 'assistant', content: '{"action":"pick","side":"enemy","heroes":["Yorn","Thane"],"lane":null,"counter":null}' },
       { role: 'user', content: 'cho em con nào bắt bài con ao i đi rừng' }, { role: 'assistant', content: '{"action":"auto_pick","side":"ally","heroes":[],"lane":"J","counter":"Aoi"}' },
       { role: 'user', content: text }],
-    max_tokens: 120, temperature: 0 });
+    max_tokens: 80, temperature: 0 });
   const out = typeof r?.response === 'string' ? r.response : JSON.stringify(r?.response || {});
   const m = out.match(/\{[\s\S]*\}/); let o = {};
   try { o = m ? JSON.parse(m[0]) : {}; } catch { o = {}; }

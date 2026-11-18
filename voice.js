@@ -105,7 +105,7 @@ const ENEMY=/\b(dich|doi thu|ben kia|doi do|team dich|phe do)\b/;
 const STOPW=/\b(doi ban|doi minh|doi thu|ben kia|di rung|ta than|tro thu|ho tro|xa thu|duong (tren|duoi|giua)|cam|ban|chon|pick|lay|dich|minh|duong|tuong|nhe|nha|rung|giua|rong)\b/g;
 
 /* ---- giọng đọc phản hồi ---- */
-let talk=true;
+let talk=(()=>{try{return localStorage.getItem('bp-lq-talk')==='1'}catch(e){return false}})(); // mặc định không đọc để mic không phải chờ
 let speaking=false;
 function say(t){if(!talk||!window.speechSynthesis||!t)return;
   try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t.replace(/<[^>]+>/g,''));u.lang='vi-VN';u.rate=1.15;
@@ -128,8 +128,8 @@ function run(orig,opt={}){
   if(/tat mic|dung nghe|ngung nghe/.test(t)){stop();return showBar(heardTxt,'🎙️ Đã tắt mic')}
   if(/hoan tac|undo|quay lai/.test(t)){document.getElementById('undo').click();say('Đã hoàn tác');return showBar(heardTxt,'↶ Đã hoàn tác')}
   if(/lam lai|reset|xoa het/.test(t)){document.getElementById('reset').click();say('Đã làm lại từ đầu');return showBar(heardTxt,'🔄 Đã làm lại')}
-  if(/tat (giong|tieng)|im lang/.test(t)){talk=false;return showBar(heardTxt,'🔇 Đã tắt giọng đọc')}
-  if(/bat (giong|tieng)/.test(t)){talk=true;say('Đã bật giọng đọc');return showBar(heardTxt,'🔊 Đã bật giọng đọc')}
+  if(/tat (giong|tieng)|im lang/.test(t)){talk=false;try{localStorage.setItem('bp-lq-talk','0')}catch(e){}return showBar(heardTxt,'🔇 Đã tắt giọng đọc')}
+  if(/bat (giong|tieng)/.test(t)){talk=true;try{localStorage.setItem('bp-lq-talk','1')}catch(e){}say('Đã bật giọng đọc');return showBar(heardTxt,'🔊 Đã bật giọng đọc')}
   if(/tier/.test(t)&&!findHero(raw)){st.mode='tier';const l=laneOf(raw);if(l)st.tierLane=l;render();return showBar(heardTxt,'📊 Mở Tier meta')}
   if(/goi y cam|nen cam gi/.test(t)){st.mode='ban';render();const b=banList()[0];say(b?'Nên cấm '+b.h.name:'');return showBar(heardTxt,b?`⛔ Nên cấm nhất: <b>${b.h.name}</b>`:'')}
   // chọn gợi ý số N
@@ -241,8 +241,12 @@ function makeRec(){
     for(let i=e.resultIndex;i<e.results.length;i++){const x=e.results[i];
       if(x.isFinal){heard=true;lastInterim='';let alt=x[0].transcript;for(let a=0;a<x.length;a++)if(findHero(x[a].transcript)){alt=x[a].transcript;break}
         const k=plain(alt).trim();if(k===lastFinal&&Date.now()-lastFinalAt<3000)continue; // Android hay trả trùng câu
-        lastFinal=k;lastFinalAt=Date.now();log('chốt câu');run(alt)}
-      else{lastInterim=x[0].transcript;holdUntil=0;showBar(x[0].transcript,'<span class="vdots">Đang nghe…</span>',true)}}};
+        lastFinal=k;lastFinalAt=Date.now();clearTimeout(earlyT);
+        if(fired){const c=canon(alt);
+          if(sameCmd(fired.c,c)&&laneOf(c)===fired.lane){log('đã chạy sớm');fired=null;continue}
+          restoreEarly()} // câu chốt khác câu tạm (thêm tướng/đường): hoàn lại rồi làm theo câu chốt
+        fired=null;log('chốt câu');run(alt)}
+      else{lastInterim=x[0].transcript;holdUntil=0;showBar(x[0].transcript,'<span class="vdots">Đang nghe…</span>',true);early(x[0].transcript)}}};
   r.onerror=e=>{log('lỗi '+e.error);
     if(e.error==='no-speech'||e.error==='aborted')return; // im lặng: tự mở lại ở onend
     if(['network','service-not-allowed','language-not-supported'].includes(e.error)){
@@ -252,13 +256,23 @@ function makeRec(){
       showBar('','🔁 Trình duyệt này không tự nhận giọng được — chuyển sang <b>chế độ AI của web</b>…',true);
       startAI();return}
     if(ERR[e.error]){on=false;btn.classList.remove('on');showBar('',ERR[e.error],true)}};
-  r.onend=()=>{log('ngắt');
-    if(!heard&&lastInterim){const t=lastInterim;lastInterim='';run(t)}heard=false;
+  r.onend=()=>{log('ngắt');clearTimeout(earlyT);
+    if(!heard&&lastInterim&&!(fired&&sameCmd(fired.c,canon(lastInterim))&&laneOf(canon(lastInterim))===fired.lane)){if(fired)restoreEarly();const t=lastInterim;lastInterim='';run(t)}heard=false;lastInterim='';fired=null;
     if(!on||speaking)return;
     if(Date.now()-idleAt>120000){stop();showBar('','🎙️ Đã tự tắt mic sau 2 phút không nói. Bấm 🎙️ để bật lại.');return}
-    setTimeout(listen,200)};
+    setTimeout(listen,30)};
   return r;
 }
+/* chạy sớm: chữ tạm đã có động từ + tên tướng rõ ràng và đứng yên 0,35 giây → làm luôn */
+let earlyT=0,fired=null;
+const keyOf=c=>(c.match(/\b(cam|chon|hoan tac|lam lai)\b/g)||[]).join('+')+'|'+(c.match(/hero_[a-z]+/g)||[]).sort().join('+')+'|'+((c.match(/\b(dich)\b/)||[''])[0]);
+const sameCmd=(a,b)=>keyOf(a)===keyOf(b);
+function early(txt){clearTimeout(earlyT);const c=canon(txt);
+  const ok=(/\b(cam|chon)\b/.test(c)&&/hero_/.test(c)&&!/khac che/.test(c))||/^(hoan tac|lam lai)$/.test(c);
+  if(!ok)return;
+  earlyT=setTimeout(()=>{if(fired&&sameCmd(fired.c,c)&&laneOf(c)===fired.lane)return;if(fired)restoreEarly();
+    const before=JSON.stringify({ally:st.ally,enemy:st.enemy,bans:st.bans});log('chạy sớm');run(txt);fired={c,before,lane:laneOf(c)}},350)}
+function restoreEarly(){if(!fired)return;const b=JSON.parse(fired.before);Object.assign(st,b);save();render();fired=null}
 function listen(){if(!on||speaking)return;
   try{rec=makeRec();rec.start()}
   catch(e){log('không mở lại được');if(++restartFails>4){on=false;btn.classList.remove('on');showBar('','🎙️ Trình duyệt không cho tự mở lại mic. Bấm 🎙️ mỗi lần muốn nói nhé.',true)}else setTimeout(listen,600)}}
@@ -278,26 +292,27 @@ async function startAI(){
   catch(e){btn.classList.remove('on');showBar('',INFRAME?ERR['not-allowed']:'⚠️ Chưa được phép dùng micro. Bấm 🔒 cạnh thanh địa chỉ → Micro → <b>Cho phép</b>, rồi bấm lại 🎙️.',true);log('AI: bị chặn mic');return}
   const AC=window.AudioContext||window.webkitAudioContext;const ctx=new AC();
   try{await ctx.resume()}catch(e){}
-  const src=ctx.createMediaStreamSource(stream),proc=ctx.createScriptProcessor(4096,1,1);
+  const src=ctx.createMediaStreamSource(stream),proc=ctx.createScriptProcessor(2048,1,1);
   const st2={stream,ctx,src,proc,buf:[],pre:[],talking:false,quiet:0,loud:0,floor:.01,sending:0,idleAt:Date.now()};ai=st2;
-  const fr=4096/ctx.sampleRate; // giây mỗi khối
+  const fr=2048/ctx.sampleRate; // giây mỗi khối
   proc.onaudioprocess=e=>{
     if(ai!==st2)return;
     const d=new Float32Array(e.inputBuffer.getChannelData(0));let sum=0;for(let i=0;i<d.length;i++)sum+=d[i]*d[i];const rms=Math.sqrt(sum/d.length);
     if(speaking){st2.talking=false;st2.buf=[];return} // web đang đọc: không ghi
     const thr=Math.max(.012,st2.floor*2.6);
-    if(!st2.talking){st2.floor=st2.floor*.95+rms*.05;st2.pre.push(d);if(st2.pre.length>3)st2.pre.shift();
+    if(!st2.talking){st2.floor=st2.floor*.95+rms*.05;st2.pre.push(d);if(st2.pre.length>5)st2.pre.shift();
       if(rms>thr){if(++st2.loud>=2){st2.talking=true;st2.buf=st2.pre.slice();st2.quiet=0;log('AI: có tiếng');showBar('','🎙️ <b>Đang nghe…</b>',true)}}else st2.loud=0;
       if(Date.now()-st2.idleAt>120000){stop();showBar('','🎙️ Đã tự tắt mic sau 2 phút không nói. Bấm 🎙️ để bật lại.')}
       return}
     st2.buf.push(d);
     if(rms<thr)st2.quiet+=fr;else st2.quiet=0;
     const dur=st2.buf.length*fr;
-    if(st2.quiet>.85||dur>7){const chunks=st2.buf;st2.buf=[];st2.talking=false;st2.loud=0;st2.idleAt=Date.now();
-      if(dur-st2.quiet>.35)sendAI(chunks,ctx.sampleRate)}
+    if(st2.quiet>.5||dur>6){let chunks=st2.buf;st2.buf=[];st2.talking=false;st2.loud=0;st2.idleAt=Date.now();
+      const tail=Math.max(0,Math.floor((st2.quiet-.15)/fr));if(tail)chunks=chunks.slice(0,chunks.length-tail); // bỏ đoạn im cuối → file nhỏ, gửi nhanh
+      if(dur-st2.quiet>.3)sendAI(chunks,ctx.sampleRate)}
   };
   src.connect(proc);proc.connect(ctx.destination);
-  log('AI: đang nghe');showBar('','🎙️ <b>Đang nghe (chế độ AI) — cứ nói</b>, ngừng 1 giây là web xử lý. VD <i>“cấm Tulen”</i>, <i>“chọn tướng khắc chế Aoi”</i>',true);
+  log('AI: đang nghe');showBar('','🎙️ <b>Đang nghe (chế độ AI) — cứ nói</b>, ngừng nửa giây là web xử lý. VD <i>“cấm Tulen”</i>, <i>“chọn tướng khắc chế Aoi”</i>',true);
   if(ctx.state!=='running')showBar('','🎙️ Bấm 🎙️ thêm 1 lần nữa để bắt đầu nghe.',true);
 }
 function stopAI(){const a=ai;ai=null;if(!a)return;try{a.proc.disconnect();a.src.disconnect()}catch(e){}a.stream.getTracks().forEach(t=>t.stop());try{a.ctx.close()}catch(e){}}
