@@ -25,3 +25,11 @@ python3 tools/build_data.py lien-quan-data Arena-of-Valor-Draft-Suggestion . dat
 Nguồn: kỹ năng và tướng lấy từ trang chủ Garena (qua [lien-quan-data](https://github.com/MLuc24/lien-quan-data)). Kèo khắc chế và kết hợp đồng đội lấy từ [Arena-of-Valor-Draft-Suggestion](https://github.com/LKTNLAC/Arena-of-Valor-Draft-Suggestion). Ảnh tướng © Garena/Tencent. Đây là công cụ tham khảo do người hâm mộ làm, không phải sản phẩm chính thức.
 
 Agent build by @Trong0322
+
+## Ra lệnh bằng giọng nói
+Bấm nút **🎙️ Giọng nói** (trên điện thoại là nút tròn góc dưới phải), cho phép dùng micro, rồi nói:
+- “cấm Tulen”, “địch cấm Yena”, “cấm theo gợi ý”
+- “chọn Aoi đi rừng”, “đối thủ chọn Violet và Thane”, “chọn gợi ý số 2”
+- “xem đường giữa”, “gợi ý cấm”, “hoàn tác”, “làm lại”, “tắt giọng”, “tắt mic”
+
+Chạy tốt trên Chrome/Edge (máy tính, Android) và Safari (iPhone). Firefox chưa hỗ trợ nhận giọng nói.

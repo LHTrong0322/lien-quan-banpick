@@ -21,11 +21,17 @@
     </div>
     <button class="turn" id="turn"></button>
     <div class="actions">
+      <button class="btn mic" id="mic" title="Ra lệnh bằng giọng nói">🎙️ <span>Giọng nói</span></button>
       <button class="btn" id="undo" title="Hoàn tác">↶ Hoàn tác</button>
       <button class="btn" id="demo">Thử mẫu</button>
       <button class="btn danger" id="reset">Làm lại</button>
     </div>
   </header>
+
+  <div class="vbar" id="vbar" hidden>
+    <div class="vbody"><div class="vtxt" id="vtxt"></div><div class="vres" id="vres"></div></div>
+    <button class="vbtn" id="vhelp" title="Câu lệnh mẫu">?</button><button class="vbtn" id="vclose" title="Đóng">✕</button>
+  </div>
 
   <section class="bans">
     <div class="banside ally"><span class="lbl">Đội bạn cấm</span><div class="banrow" id="bans-ally"></div></div>
@@ -83,5 +89,6 @@
 
 <script src="data.js"></script>
 <script src="app.js"></script>
+<script src="voice.js"></script>
 </body>
 </html>
